@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.572
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AICombatArena", "AICombatArena.vcxproj", "{BDE09D51-77F1-47AA-9F52-6A39B11262DB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BDE09D51-77F1-47AA-9F52-6A39B11262DB}.Debug|x64.ActiveCfg = Debug|x64
+		{BDE09D51-77F1-47AA-9F52-6A39B11262DB}.Debug|x64.Build.0 = Debug|x64
+		{BDE09D51-77F1-47AA-9F52-6A39B11262DB}.Debug|x86.ActiveCfg = Debug|Win32
+		{BDE09D51-77F1-47AA-9F52-6A39B11262DB}.Debug|x86.Build.0 = Debug|Win32
+		{BDE09D51-77F1-47AA-9F52-6A39B11262DB}.Release|x64.ActiveCfg = Release|x64
+		{BDE09D51-77F1-47AA-9F52-6A39B11262DB}.Release|x64.Build.0 = Release|x64
+		{BDE09D51-77F1-47AA-9F52-6A39B11262DB}.Release|x86.ActiveCfg = Release|Win32
+		{BDE09D51-77F1-47AA-9F52-6A39B11262DB}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1F47C4BC-39AD-4380-AECE-403C6F28F06D}
+	EndGlobalSection
+EndGlobal

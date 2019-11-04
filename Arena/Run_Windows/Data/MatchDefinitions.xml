@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<MatchDefinitions>
+   <MatchDefinition
+      name="Free For All"
+      minTurnTime="0.060"
+      mapSizeOverride="50"
+      startingNutrientsPerPlayer="2000"
+      startingScouts="2"
+      startingWorkers="2"
+      startingSoldiers="1"
+      startingQueens="1"
+      startingFoodStrandsPer100Tiles="30"
+      maxFoodStrandLength="1"
+      foodSpawnedPerTurnPer100Tiles="0.01"
+      turnsUntilSuddenDeath="1000"
+      suddenDeathTurnsPerUpkeepIncrease="2"
+	  foodCarryExhaustPenalty="1"
+	  tileCarryExhaustPenalty="1"
+	/>
+</MatchDefinitions>
