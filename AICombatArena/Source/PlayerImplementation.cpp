@@ -12,13 +12,13 @@ int GiveCommonInterfaceVersion()
 //------------------------------------------------------------------------------------------------------------------------------
 const char* GivePlayerName()
 {
-	return "ReduntANT";
+	return "Chip Chapley";
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 const char* GiveAuthorName()
 {
-	return "I am Adam";
+	return "Chad Bradley";
 }
 
 // setup

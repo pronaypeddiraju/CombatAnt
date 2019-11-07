@@ -1,4 +1,4 @@
-﻿  AIPlayerController.cpp
+﻿  PlayerImplementation.cpp
   AICombatArena.vcxproj -> D:\School_Git\CombatAnt\AICombatArena\x64\Debug\AICombatArena.dll
   Copying AICombatArena.dll to Arena Players folder
   D:\School_Git\CombatAnt\AICombatArena\x64\Debug\AICombatArena.dll -> D:\School_Git\CombatAnt\Arena\Run_Windows\Players\AICombatArena.dll

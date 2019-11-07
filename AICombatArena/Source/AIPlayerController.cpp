@@ -64,7 +64,7 @@ void AIPlayerController::Startup(const StartupInfo& info)
 //------------------------------------------------------------------------------------------------------------------------------
 void AIPlayerController::Shutdown(const MatchResults& results)
 {
-	//Do whatever you need to do here to shut down safely
+	m_running = false;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -320,7 +320,7 @@ bool AIPlayerController::CheckTileSafetyForMove(AgentReport currentAgent, eOrder
 
 	case ORDER_MOVE_EAST:
 		index = GetTileIndex(currentAgent.tileX + 1, currentAgent.tileY);
-		if (m_currentTurnInfo.observedTiles[index] == TILE_TYPE_UNSEEN || m_currentTurnInfo.observedTiles[index] == TILE_TYPE_WATER)
+		if (m_currentTurnInfo.observedTiles[index] == TILE_TYPE_UNSEEN || m_currentTurnInfo.observedTiles[index] == TILE_TYPE_WATER || m_currentTurnInfo.observedTiles[index] == TILE_TYPE_STONE)
 		{
 			return false;
 		}
@@ -342,7 +342,7 @@ bool AIPlayerController::CheckTileSafetyForMove(AgentReport currentAgent, eOrder
 		
 	case ORDER_MOVE_WEST:
 		index = GetTileIndex(currentAgent.tileX - 1, currentAgent.tileY);
-		if (m_currentTurnInfo.observedTiles[index] == TILE_TYPE_UNSEEN || m_currentTurnInfo.observedTiles[index] == TILE_TYPE_WATER)
+		if (m_currentTurnInfo.observedTiles[index] == TILE_TYPE_UNSEEN || m_currentTurnInfo.observedTiles[index] == TILE_TYPE_WATER || m_currentTurnInfo.observedTiles[index] == TILE_TYPE_STONE)
 		{
 			return false;
 		}
