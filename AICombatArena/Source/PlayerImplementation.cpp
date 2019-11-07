@@ -1,6 +1,9 @@
 #define ARENA_CLIENT
 #include "ArenaPlayerInterface.hpp"
 #include "AIPlayerController.hpp"
+#include "AICommons.hpp"
+
+volatile std::atomic<bool> gCanShutDown = false;
 
 // info collection
 //------------------------------------------------------------------------------------------------------------------------------
@@ -33,6 +36,13 @@ void PostGameShutdown(const MatchResults& results)
 {
 	AIPlayerController* player = AIPlayerController::GetInstance();
 	player->Shutdown(results);
+
+	while (gCanShutDown != true)
+	{
+		//Do nothing
+		//The Ant arena (the ant arena thread will be here) needs to wait till the gCanShutDown is set as true by the threads from my DLL
+	}
+
 	delete player;
 }
 

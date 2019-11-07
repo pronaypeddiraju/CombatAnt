@@ -1,6 +1,7 @@
 #pragma once
 #include "ArenaPlayerInterface.hpp"
 #include <mutex>
+#include <atomic>
 
 //------------------------------------------------------------------------------------------------------------------------------
 class AIPlayerController
@@ -42,7 +43,7 @@ private:
 	DebugInterface* m_debugInterface;
 
 	int m_lastTurnProcessed;
-	bool m_running;
+	volatile bool m_running;
 
 	std::mutex m_turnLock;
 	std::condition_variable m_turnCV;

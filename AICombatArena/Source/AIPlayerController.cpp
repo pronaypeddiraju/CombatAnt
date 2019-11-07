@@ -4,6 +4,7 @@
 #include <math.h>
 
 AIPlayerController* g_thePlayer = nullptr;
+extern volatile std::atomic<bool> gCanShutDown;
 
 //------------------------------------------------------------------------------------------------------------------------------
 // Statics and locals
@@ -65,15 +66,15 @@ void AIPlayerController::Startup(const StartupInfo& info)
 void AIPlayerController::Shutdown(const MatchResults& results)
 {
 	m_running = false;
+	m_turnCV.notify_all();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::ThreadEntry(int /*threadIdx*/)
+void AIPlayerController::ThreadEntry(int threadIdx)
 {
 	// wait for data
 	// process turn
 	// mark turn as finished;
-
 	ArenaTurnStateForPlayer turnState;
 
 	while (m_running)
@@ -91,9 +92,13 @@ void AIPlayerController::ThreadEntry(int /*threadIdx*/)
 
 			// notify the turn is ready; 
 			m_lastTurnProcessed = turnState.turnNumber;
-			m_debugInterface->LogText("AIPlayer Turn Complete: %i", turnState.turnNumber);
+			m_debugInterface->LogText("Pronay's Turn Complete: %i", turnState.turnNumber);
 		}
 	}
+
+	//This thread needs to now set the Shut Down condition as true(Not the ANT arena!)
+	gCanShutDown = true;
+	return;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
