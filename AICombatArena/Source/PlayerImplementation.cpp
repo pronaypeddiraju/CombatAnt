@@ -15,13 +15,13 @@ int GiveCommonInterfaceVersion()
 //------------------------------------------------------------------------------------------------------------------------------
 const char* GivePlayerName()
 {
-	return "Chip Chapley";
+	return "United Ants of India";
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 const char* GiveAuthorName()
 {
-	return "Chad Bradley";
+	return "Pronay";
 }
 
 // setup
@@ -49,6 +49,7 @@ void PostGameShutdown(const MatchResults& results)
 void PlayerThreadEntry(int yourThreadIdx)
 {
 	// this Ai is "bad" - I'm only going to use one worker thread
+	TODO("Make this threaded and use a job system with behavior trees");
 	if (yourThreadIdx == 0)
 	{
 		AIPlayerController* player = AIPlayerController::GetInstance();
