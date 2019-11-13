@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------------------------------------------------------
 #pragma once
 #include <math.h>
+#include "IntVec2.hpp"
 
 //------------------------------------------------------------------------------------------------------------------------------
 typedef unsigned int uint;
@@ -92,6 +93,8 @@ Vec2			GetLocalPositionFromWorld2D(const Vec2& worldPosition, const Vec2& iBasis
 
 Vec2			GetWorldVectorFromLocal2D(const Vec2& localVector, const Vec2& iBasis, const Vec2& jBasis);
 Vec2			GetWorldPositionFromWorld2D(const Vec2& localPosition, const Vec2& iBasis, const Vec2& jBasis, const Vec2& tBasis);
+
+int				GetManhattanDistance(IntVec2 tile1, IntVec2 tile2);
 
 //Equation solvers
 uint			SolveQuadraticEquation(float* out, float a, float b, float c);

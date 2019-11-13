@@ -135,6 +135,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\AStarPathing.hpp" />
     <ClInclude Include="Source\AICommons.hpp" />
     <ClInclude Include="Source\AIPlayerController.hpp" />
     <ClInclude Include="Source\ArenaPlayerInterface.hpp" />
@@ -150,6 +151,7 @@
     <ClInclude Include="Source\Vec2.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\AStarPathing.cpp" />
     <ClCompile Include="Source\AIPlayerController.cpp" />
     <ClCompile Include="Source\ErrorWarningAssert.cpp" />
     <ClCompile Include="Source\IntVec2.cpp" />

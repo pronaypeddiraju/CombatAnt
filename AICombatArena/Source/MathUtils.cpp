@@ -596,6 +596,18 @@ Vec2 GetWorldPositionFromWorld2D( const Vec2& localPosition, const Vec2& iBasis,
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+int GetManhattanDistance(IntVec2 tile1, IntVec2 tile2)
+{
+	//Find the closest manhattan distance among the 2 tiles
+	int distanceX = abs(tile1.x - tile2.x);
+	int distanceY = abs(tile1.y - tile2.y);
+
+	int manhanttanDist = distanceX + distanceY;
+
+	return manhanttanDist;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
 uint SolveQuadraticEquation(float* out, float a, float b, float c)
 {
 	//For any a,b,c we are getting the possible results using out

@@ -52,23 +52,30 @@ void PathSolver::StartDistanceField(Pather* pather, Path* unitPath)
 
 	//Push the seed into openList
 	info.cost = m_pather->m_costs.Get(m_endPoint);
+	info.tile = m_endPoint;
 	info.parent = m_endPoint;
 	openList.push_back(info);
+	PathInfo_T prevTile = info;
+	PathInfo_T lowestCostCell;
 
 	//Run Dijkstra Path Finder
 	while (!openList.empty())
 	{
 		//Get cell with minimum cost and delete from set
-		PathInfo_T lowestCostCell = PopLowestCostCellFromList(openList);
+		lowestCostCell = PopLowestCostCellFromList(openList);
 
 		//Visit the lowest cost cell
 		m_visited.push_back(lowestCostCell);
-		info.cost = m_pather->m_costs.Get(lowestCostCell.parent) + lowestCostCell.cost;
+		info.cost = m_pather->m_costs.Get(lowestCostCell.tile) + lowestCostCell.cost;
 		info.state = PATH_STATE_VISITED;
-		info.parent = lowestCostCell.parent;
-		m_pathInfo.Set(lowestCostCell.parent, info);
+		info.tile = lowestCostCell.tile;
+		info.parent = prevTile.tile;
+		prevTile = lowestCostCell;
+		prevTile.parent = lowestCostCell.tile;
 
-		if (info.parent == m_startPoint)
+		m_pathInfo.Set(lowestCostCell.tile, info);
+
+		if (info.tile == m_startPoint)
 		{
 			break;
 		}
@@ -77,6 +84,7 @@ void PathSolver::StartDistanceField(Pather* pather, Path* unitPath)
 		GetNeighbors(lowestCostCell, neighbors);
 		SetNeighborCosts(neighbors, lowestCostCell.cost);
 		PushToOpenList(neighbors, openList);
+
 	}
 
 	FallDownToShortestPath(*unitPath);
@@ -87,11 +95,11 @@ PathInfo_T PathSolver::PopLowestCostCellFromList(std::vector<PathInfo_T>& openLi
 {
 	float lowestCost = 1000000.f;
 	PathInfo_T lowestCostCell;
-	lowestCostCell.parent = IntVec2(-1, -1);
+	lowestCostCell.tile = IntVec2(-1, -1);
 	int lowestIndex = 0;
 	for (int index = 0; index < openList.size(); index++)
 	{
-		if (openList[index].parent == IntVec2(-1, -1))
+		if (openList[index].tile == IntVec2(-1, -1))
 			continue;
 
 		if (openList[index].cost < lowestCost)
@@ -111,11 +119,11 @@ void PathSolver::PushToOpenList(const std::vector<PathInfo_T>& neighbors, std::v
 {
 	for (int index = 0; index < 4; index++)
 	{
-		if (neighbors[index].parent != IntVec2(-1, -1))
+		if (neighbors[index].tile != IntVec2(-1, -1))
 		{
 			if (std::find(openList.begin(), openList.end(), neighbors[index]) == openList.end())
 			{
-				if (m_pathInfo.Get(neighbors[index].parent).state == PATH_STATE_UNVISITED)
+				if (m_pathInfo.Get(neighbors[index].tile).state == PATH_STATE_UNVISITED)
 				{
 					openList.push_back(neighbors[index]);
 				}
@@ -128,29 +136,29 @@ void PathSolver::PushToOpenList(const std::vector<PathInfo_T>& neighbors, std::v
 void PathSolver::GetNeighbors(const PathInfo_T& cell, std::vector<PathInfo_T>& neighbors)
 {
 	PathInfo_T neighbor;
-	neighbor.parent = cell.parent;
 
 	//Left neighbor
-	neighbor.parent.x -= 1;
-	neighbor.cost = m_pather->m_costs.Get(cell.parent);
+	neighbor.tile = cell.tile;
+	neighbor.tile.x -= 1;
+	neighbor.cost = m_pather->m_costs.Get(cell.tile);
 	SetNeighbor(neighbor, neighbors, 0);
 
 	//Right neighbor
 	neighbor = cell;
-	neighbor.parent.x += 1;
-	neighbor.cost = m_pather->m_costs.Get(cell.parent);
+	neighbor.tile.x += 1;
+	neighbor.cost = m_pather->m_costs.Get(cell.tile);
 	SetNeighbor(neighbor, neighbors, 1);
 
 	//Top neighbor
 	neighbor = cell;
-	neighbor.parent.y += 1;
-	neighbor.cost = m_pather->m_costs.Get(cell.parent);
+	neighbor.tile.y += 1;
+	neighbor.cost = m_pather->m_costs.Get(cell.tile);
 	SetNeighbor(neighbor, neighbors, 2);
 
 	//Bottom neighbor
 	neighbor = cell;
-	neighbor.parent.y -= 1;
-	neighbor.cost = m_pather->m_costs.Get(cell.parent);
+	neighbor.tile.y -= 1;
+	neighbor.cost = m_pather->m_costs.Get(cell.tile);
 	SetNeighbor(neighbor, neighbors, 3);
 }
 
@@ -159,14 +167,14 @@ void PathSolver::GetNeighborsFromVisited(const PathInfo_T& cell, std::vector<Pat
 {
 	PathInfo_T neighbor;
 	PathInfo_T defaultInfo;
-	neighbor.parent = cell.parent;
+	neighbor.tile = cell.tile;
 	IntVec2 bounds = m_pather->m_costs.GetSize();
 
 	//Left neighbor
-	neighbor.parent.x -= 1;
-	if (neighbor.parent.IsInBounds(bounds))
+	neighbor.tile.x -= 1;
+	if (neighbor.tile.IsInBounds(bounds))
 	{
-		neighbor.cost = m_pathInfo.Get(neighbor.parent).cost;
+		neighbor.cost = m_pathInfo.Get(neighbor.tile).cost;
 		SetNeighbor(neighbor, neighbors, 0);
 	}
 	else
@@ -177,10 +185,10 @@ void PathSolver::GetNeighborsFromVisited(const PathInfo_T& cell, std::vector<Pat
 
 	//Right neighbor
 	neighbor = cell;
-	neighbor.parent.x += 1;
-	if (neighbor.parent.IsInBounds(bounds))
+	neighbor.tile.x += 1;
+	if (neighbor.tile.IsInBounds(bounds))
 	{
-		neighbor.cost = m_pathInfo.Get(neighbor.parent).cost;
+		neighbor.cost = m_pathInfo.Get(neighbor.tile).cost;
 		SetNeighbor(neighbor, neighbors, 1);
 	}
 	else
@@ -191,10 +199,10 @@ void PathSolver::GetNeighborsFromVisited(const PathInfo_T& cell, std::vector<Pat
 
 	//Top neighbor
 	neighbor = cell;
-	neighbor.parent.y += 1;
-	if (neighbor.parent.IsInBounds(bounds))
+	neighbor.tile.y += 1;
+	if (neighbor.tile.IsInBounds(bounds))
 	{
-		neighbor.cost = m_pathInfo.Get(neighbor.parent).cost;
+		neighbor.cost = m_pathInfo.Get(neighbor.tile).cost;
 		SetNeighbor(neighbor, neighbors, 2);
 	}
 	else
@@ -205,10 +213,10 @@ void PathSolver::GetNeighborsFromVisited(const PathInfo_T& cell, std::vector<Pat
 
 	//Bottom neighbor
 	neighbor = cell;
-	neighbor.parent.y -= 1;
-	if (neighbor.parent.IsInBounds(bounds))
+	neighbor.tile.y -= 1;
+	if (neighbor.tile.IsInBounds(bounds))
 	{
-		neighbor.cost = m_pathInfo.Get(neighbor.parent).cost;
+		neighbor.cost = m_pathInfo.Get(neighbor.tile).cost;
 		SetNeighbor(neighbor, neighbors, 3);
 	}
 	else
@@ -225,12 +233,12 @@ void PathSolver::GetCheapestNeighbors(std::vector<PathInfo_T>& cheapestCostCells
 
 	for (int index = 0; index < list.size(); ++index)
 	{
-		if (list[index].parent == IntVec2(-1, -1))
+		if (list[index].tile == IntVec2(-1, -1))
 			continue;
 
-		if (m_pathInfo.Get(list[index].parent).cost <= lowestCost)
+		if (m_pathInfo.Get(list[index].tile).cost <= lowestCost)
 		{
-			lowestCost = m_pathInfo.Get(list[index].parent).cost;
+			lowestCost = m_pathInfo.Get(list[index].tile).cost;
 			cheapestCostCells.push_back(list[index]);
 		}
 	}
@@ -249,7 +257,7 @@ void PathSolver::GetCheapestNeighbors(std::vector<PathInfo_T>& cheapestCostCells
 //------------------------------------------------------------------------------------------------------------------------------
 void PathSolver::SetNeighbor(const PathInfo_T neighbor, std::vector<PathInfo_T>& neighborsArray, int index)
 {
-	if (neighbor.parent.IsInBounds(m_pather->m_costs.GetSize()))
+	if (neighbor.tile.IsInBounds(m_pather->m_costs.GetSize()))
 	{
 		neighborsArray[index] = neighbor;
 	}
@@ -265,9 +273,9 @@ void PathSolver::SetNeighborCosts(std::vector<PathInfo_T>& neighborsArray, float
 {
 	for (int index = 0; index < 4; index++)
 	{
-		if (neighborsArray[index].parent != IntVec2(-1, -1))
+		if (neighborsArray[index].tile != IntVec2(-1, -1))
 		{
-			neighborsArray[index].cost = m_pather->m_costs.Get(neighborsArray[index].parent) + previousTileCost;
+			neighborsArray[index].cost = m_pather->m_costs.Get(neighborsArray[index].tile) + previousTileCost;
 		}
 
 		//If the neighbor has been visited already, update his cost
@@ -279,7 +287,7 @@ void PathSolver::SetNeighborCosts(std::vector<PathInfo_T>& neighborsArray, float
 				if (neighborVisited->cost > neighborsArray[index].cost)
 				{
 					neighborVisited->cost = neighborsArray[index].cost;
-					neighborVisited->parent = neighborsArray[index].parent;
+					neighborVisited->tile = neighborsArray[index].tile;
 				}
 			}
 		}
@@ -334,9 +342,9 @@ void PathSolver::FallDownToShortestPath(Path& shortestPath)
 			lowestCostCell = lowestCostCells[0];
 		}
 
-		if (std::find(shortestPath.begin(), shortestPath.end(), lowestCostCell.parent) == shortestPath.end())
+		if (std::find(shortestPath.begin(), shortestPath.end(), lowestCostCell.tile) == shortestPath.end())
 		{
-			shortestPath.push_back(lowestCostCell.parent);
+			shortestPath.push_back(lowestCostCell.tile);
 		}
 
 		lastCell = lowestCostCell;
@@ -348,7 +356,7 @@ void PathSolver::RemoveNeighborsIfInList(std::vector<PathInfo_T>& neighbors, std
 {
 	for (int index = 0; index < (int)neighbors.size(); ++index)
 	{
-		if (std::find(shortestPath.begin(), shortestPath.end(), neighbors[index].parent) != shortestPath.end())
+		if (std::find(shortestPath.begin(), shortestPath.end(), neighbors[index].tile) != shortestPath.end())
 		{
 			//Reset this element as we don't need it
 			PathInfo_T info;
@@ -360,7 +368,7 @@ void PathSolver::RemoveNeighborsIfInList(std::vector<PathInfo_T>& neighbors, std
 //------------------------------------------------------------------------------------------------------------------------------
 bool PathInfo_T::operator==(const PathInfo_T& compare) const
 {
-	if (cost == compare.cost && parent == compare.parent && state == compare.state)
+	if (cost == compare.cost && tile == compare.tile && state == compare.state)
 	{
 		return true;
 	}

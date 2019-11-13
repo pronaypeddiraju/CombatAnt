@@ -186,18 +186,18 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 					{
 						if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
 						{
-							//MoveRandom(report);
-							PathToQueen(report);
+							MoveRandom(report);
+							//PathToQueen(report);
 						}
 						else if (report.tileX == m_queenReport.tileX || report.tileY == m_queenReport.tileY)
 						{
-							//MoveToQueen(report);
-							PathToQueen(report);
+							MoveToQueen(report);
+							//PathToQueen(report);
 						}
 						else
 						{
-							//MoveRandom(report);
-							PathToQueen(report);
+							MoveRandom(report);
+							//PathToQueen(report);
 						}
 					}
 				}
@@ -217,8 +217,8 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 						}
 						else
 						{
-							//MoveToClosestFood(report);
-							PathToClosestFood(report);
+							MoveToClosestFood(report);
+							//PathToClosestFood(report);
 						}
 					}
 				}

@@ -13,7 +13,8 @@ enum ePathState
 struct PathInfo_T
 {
 	float cost = INFINITY;  // how much did it cost to reach this point
-	IntVec2 tile = IntVec2(-1, -1); // who was I visited by
+	IntVec2 tile = IntVec2(-1, -1);  //Who am I
+	IntVec2 parent = IntVec2(-1, -1);	// who was I visited by
 	ePathState state = PATH_STATE_UNVISITED;
 
 	bool	operator==(const PathInfo_T& compare) const;
