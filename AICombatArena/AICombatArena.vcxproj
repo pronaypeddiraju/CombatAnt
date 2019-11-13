@@ -138,10 +138,31 @@
     <ClInclude Include="Source\AICommons.hpp" />
     <ClInclude Include="Source\AIPlayerController.hpp" />
     <ClInclude Include="Source\ArenaPlayerInterface.hpp" />
+    <ClInclude Include="Source\Array2D.hpp" />
+    <ClInclude Include="Source\ErrorWarningAssert.hpp" />
+    <ClInclude Include="Source\IntVec2.hpp" />
+    <ClInclude Include="Source\MathUtils.hpp" />
+    <ClInclude Include="Source\Pathing.hpp" />
+    <ClInclude Include="Source\RandomNumberGenerator.hpp" />
+    <ClInclude Include="Source\RawNoise.hpp" />
+    <ClInclude Include="Source\SmoothNoise.hpp" />
+    <ClInclude Include="Source\StringUtils.hpp" />
+    <ClInclude Include="Source\Vec2.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\AIPlayerController.cpp" />
+    <ClCompile Include="Source\ErrorWarningAssert.cpp" />
+    <ClCompile Include="Source\IntVec2.cpp" />
+    <ClCompile Include="Source\MathUtils.cpp" />
+    <ClCompile Include="Source\Pathing.cpp" />
     <ClCompile Include="Source\PlayerImplementation.cpp" />
+    <ClCompile Include="Source\RandomNumberGenerator.cpp" />
+    <ClCompile Include="Source\SmoothNoise.cpp" />
+    <ClCompile Include="Source\StringUtils.cpp" />
+    <ClCompile Include="Source\Vec2.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\Array2D.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

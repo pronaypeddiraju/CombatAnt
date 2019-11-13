@@ -54,4 +54,5 @@ private:
 	AgentReport m_queenReport;
 
 	int			m_numWorkers = 0;
+	int			m_numSoldiers = 0;
 };

@@ -2,6 +2,9 @@
 
 //------------------------------------------------------------------------------------------------------------------------------
 // Useful macros when developing
+#define UNUSED(x) (void)(x);
+#define STATIC
+#define VIRTUAL
 #define PRAGMA(p)  __pragma( p )
 #define NOTE( x )  PRAGMA( message(x) )
 #define FILE_LINE  NOTE( __FILE__LINE__ )
@@ -23,5 +26,7 @@ class AIPlayerController;
 extern AIPlayerController* g_thePlayer;
 
 constexpr int MAX_WORKERS = 25;
-constexpr int MIN_NUTRIENTS_TO_SPAWN = 2000;
+constexpr int MAX_SOLDIERS = 10;
+constexpr int MIN_NUTRIENTS_TO_SPAWN_WORKER = 3000;
+constexpr int MIN_NUTRIENTS_TO_SPAWN_SOLDIER = 3000;
 constexpr int MAX_RECURSION_ALLOWED = 10;

@@ -172,7 +172,7 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 						{
 							MoveRandom(report);
 						}
-						else if(report.tileX == m_queenReport.tileX || report.tileY == m_queenReport.tileY)
+						else if (report.tileX == m_queenReport.tileX || report.tileY == m_queenReport.tileY)
 						{
 							MoveToQueen(report);
 						}
@@ -212,16 +212,41 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 				// queen either moves or spawns randomly
 			case AGENT_TYPE_QUEEN:
 			{
-				const float RANDOM_SPAWN_CHANCE = 0.5f;
-				if (RandomFloat01() < RANDOM_SPAWN_CHANCE)
+				/*
+				if (report.receivedCombatDamage > 0 || m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_SOLDIER)
 				{
-					// spawn
-					if (m_numWorkers < MAX_WORKERS && report.exhaustion == 0 && m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN)
+					if (m_numSoldiers < MAX_SOLDIERS)
 					{
-						int typeOffset = rand() % 3;
-						eOrderCode order = (eOrderCode)(ORDER_BIRTH_WORKER);
+						eOrderCode order = (eOrderCode)(ORDER_BIRTH_SOLDIER);
 						AddOrder(report.agentID, order);
-						m_numWorkers++;
+						m_numSoldiers++;
+					}
+				}
+				else
+				{
+					
+				}
+				*/
+
+				if (report.receivedCombatDamage > 0)
+				{
+					eOrderCode order = (eOrderCode)(ORDER_BIRTH_SOLDIER);
+					AddOrder(report.agentID, order);
+					m_numSoldiers++;
+				}
+				else
+				{
+					const float RANDOM_SPAWN_CHANCE = 0.5f;
+					if (RandomFloat01() < RANDOM_SPAWN_CHANCE)
+					{
+						// spawn
+						if (m_numWorkers < MAX_WORKERS && report.exhaustion == 0 && m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_WORKER)
+						{
+							int typeOffset = rand() % 3;
+							eOrderCode order = (eOrderCode)(ORDER_BIRTH_WORKER);
+							AddOrder(report.agentID, order);
+							m_numWorkers++;
+						}
 					}
 				}
 			} break;
