@@ -70,12 +70,22 @@ void AIPlayerController::Shutdown(const MatchResults& results)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::ThreadEntry(int threadIdx)
+void AIPlayerController::MainThreadEntry(int threadIdx)
+{
+	//Do main thread work here
+
+	//Flood fill the map
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::WorkerThreadEntry(int threadIdx)
 {
 	// wait for data
 	// process turn
 	// mark turn as finished;
 	ArenaTurnStateForPlayer turnState;
+
+	IntVec2 mapSize = IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth);
 
 	while (m_running)
 	{
@@ -86,6 +96,11 @@ void AIPlayerController::ThreadEntry(int threadIdx)
 		{
 			turnState = m_currentTurnInfo;
 			lk.unlock();
+
+			m_pather.Init(mapSize, 1);
+			//SetMapCostBasedOnAntVision(AGENT_TYPE_WORKER);
+			//SetMapCostBasedOnAntVision(AGENT_TYPE_SCOUT);
+			//SetMapCostBasedOnAntVision(AGENT_TYPE_SOLDIER);
 
 			// process a turn and then mark that the turn is ready; 
 			ProcessTurn(turnState);
@@ -156,6 +171,7 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 				// scout will drunkely walk
 			case AGENT_TYPE_SCOUT:
 				MoveRandom(report);
+				//PathToClosestFood(report);
 				break;
 
 				// moves randomly, but if they fall on food, will pick it up if hands are free
@@ -170,15 +186,18 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 					{
 						if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
 						{
-							MoveRandom(report);
+							//MoveRandom(report);
+							PathToQueen(report);
 						}
 						else if (report.tileX == m_queenReport.tileX || report.tileY == m_queenReport.tileY)
 						{
-							MoveToQueen(report);
+							//MoveToQueen(report);
+							PathToQueen(report);
 						}
 						else
 						{
-							MoveRandom(report);
+							//MoveRandom(report);
+							PathToQueen(report);
 						}
 					}
 				}
@@ -198,7 +217,8 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 						}
 						else
 						{
-							MoveToClosestFood(report);
+							//MoveToClosestFood(report);
+							PathToClosestFood(report);
 						}
 					}
 				}
@@ -252,6 +272,24 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 			} break;
 			}
 		}
+		else if (report.state == STATE_DEAD)
+		{
+			switch (report.type)
+			{
+			case AGENT_TYPE_SOLDIER:
+				m_numSoldiers--;
+				break;
+			case AGENT_TYPE_WORKER:
+				m_numWorkers--;
+				break;
+			}
+		}
+		else
+		{
+			//report.exhaustion == 0
+
+		}
+
 	}
 }
 
@@ -266,6 +304,15 @@ void AIPlayerController::GetTileXYFromIndex(const short tileIndex, short &x, sho
 {
 	y = tileIndex / m_matchInfo.mapWidth;
 	x = tileIndex % m_matchInfo.mapWidth;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+IntVec2 AIPlayerController::GetTileCoordinatesFromIndex(const short tileIndex)
+{
+	IntVec2 tileCoords;
+	tileCoords.x = tileIndex % m_matchInfo.mapWidth;
+	tileCoords.y = tileIndex / m_matchInfo.mapWidth;
+	return tileCoords;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -484,6 +531,62 @@ void AIPlayerController::MoveToClosestFood(AgentReport currentAgent, int recursi
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::PathToClosestFood(AgentReport currentAgent)
+{
+	short destX = 100;
+	short destY = 100;
+	int closestIndex = 0;
+
+	//Look for visible food
+	for (int hasFoodTileIndex = 0; hasFoodTileIndex < MAX_ARENA_TILES; hasFoodTileIndex++)
+	{
+		if (m_currentTurnInfo.tilesThatHaveFood[hasFoodTileIndex])
+		{
+			short foodFoundX = 0;
+			short foodFoundY = 0;
+
+			GetTileXYFromIndex(hasFoodTileIndex, foodFoundX, foodFoundY);
+
+			short closestX = 0;
+			short closestY = 0;
+
+			ReturnClosestAmong(currentAgent, closestX, closestY, destX, destY, foodFoundX, foodFoundY);
+			if (closestX == destX && closestY == destY)
+			{
+				closestIndex = hasFoodTileIndex;
+			}
+
+			destX = closestX;
+			destY = closestY;
+		}
+	}
+
+	//Now path to the closest food
+	m_pathSolver = new PathSolver;
+	Path path;
+	path.clear();
+	m_pathSolver->AddStart(IntVec2(currentAgent.tileX, currentAgent.tileY));
+	m_pathSolver->AddEnd(IntVec2(destX, destY));
+	m_pathSolver->StartDistanceField(&m_pather, &path);
+	eOrderCode order = GetMoveOrderToTile(currentAgent, path[1].x, path[1].y);
+	AddOrder(currentAgent.agentID, order);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::PathToQueen(AgentReport currentAgent)
+{
+	//Now path to the closest food
+	m_pathSolver = new PathSolver;
+	Path path;
+	path.clear();
+	m_pathSolver->AddStart(IntVec2(currentAgent.tileX, currentAgent.tileY));
+	m_pathSolver->AddEnd(IntVec2(m_queenReport.tileX, m_queenReport.tileY));
+	m_pathSolver->StartDistanceField(&m_pather, &path);
+	eOrderCode order = GetMoveOrderToTile(currentAgent, path[1].x, path[1].y);
+	AddOrder(currentAgent.agentID, order);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
 AgentReport AIPlayerController::FindFirstAgentOfType(eAgentType type)
 {
 	//Loop through agents and return the first agent of eAgentType type
@@ -533,3 +636,87 @@ eOrderCode AIPlayerController::GetMoveOrderToTile(AgentReport currentAgent, shor
 	}
 }
 
+//------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::SetMapCostBasedOnAntVision(eAgentType agentType)
+{
+	//Check what is visible in the map and set costs accordingly
+	for (int observedTileIndex = 0; observedTileIndex < m_matchInfo.mapWidth * m_matchInfo.mapWidth; observedTileIndex++)
+	{
+		int cost = GetTileCostForAgentType(agentType, m_currentTurnInfo.observedTiles[observedTileIndex]);
+		IntVec2 coords = GetTileCoordinatesFromIndex(observedTileIndex);
+		m_pather.SetCost(coords, (float)cost);
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+int AIPlayerController::GetTileCostForAgentType(eAgentType agentType, eTileType tileType)
+{
+	switch (agentType)
+	{
+	case AGENT_TYPE_WORKER:
+	{
+		switch (tileType)
+		{
+		case TILE_TYPE_DIRT:
+		case TILE_TYPE_AIR:
+		case TILE_TYPE_CORPSE_BRIDGE:
+			return 1;
+			break;
+		case TILE_TYPE_WATER:
+			return 9999;
+			break;
+		case TILE_TYPE_UNSEEN:
+			return 50;
+			break;
+		case 	TILE_TYPE_STONE:
+			return 9999;
+			break;
+		}
+	}
+	break;
+	case AGENT_TYPE_SCOUT:
+	{
+		switch (tileType)
+		{
+		case TILE_TYPE_DIRT:
+		case TILE_TYPE_AIR:
+		case TILE_TYPE_CORPSE_BRIDGE:
+			return 1;
+			break;
+		case TILE_TYPE_WATER:
+			return 9999;
+			break;
+		case TILE_TYPE_UNSEEN:
+			return 1;
+			break;
+		case 	TILE_TYPE_STONE:
+			return 9999;
+			break;
+		}
+	}
+		break;
+	case AGENT_TYPE_SOLDIER:
+	{
+		switch (tileType)
+		{
+		case TILE_TYPE_DIRT:
+			return 50;
+			break;
+		case TILE_TYPE_AIR:
+		case TILE_TYPE_CORPSE_BRIDGE:
+			return 1;
+			break;
+		case TILE_TYPE_WATER:
+			return 9999;
+			break;
+		case TILE_TYPE_UNSEEN:
+			return 1;
+			break;
+		case 	TILE_TYPE_STONE:
+			return 9999;
+			break;
+		}
+	}
+		break;
+	}
+}

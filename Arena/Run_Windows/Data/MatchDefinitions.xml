@@ -3,8 +3,9 @@
 <MatchDefinitions>
    <MatchDefinition
       name="Free For All"
-      minTurnTime="0.060"
-      mapSizeOverride="50"
+      minTurnTime="0.030"
+      mapSizeOverride="64"
+      maxPopulation="128"
       startingNutrientsPerPlayer="2000"
       startingScouts="2"
       startingWorkers="2"
@@ -15,7 +16,7 @@
       foodSpawnedPerTurnPer100Tiles="0.01"
       turnsUntilSuddenDeath="1000"
       suddenDeathTurnsPerUpkeepIncrease="2"
-	  foodCarryExhaustPenalty="1"
-	  tileCarryExhaustPenalty="1"
+	   foodCarryExhaustPenalty="1"
+	   tileCarryExhaustPenalty="1"
 	/>
 </MatchDefinitions>

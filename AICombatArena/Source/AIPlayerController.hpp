@@ -1,5 +1,6 @@
 #pragma once
 #include "ArenaPlayerInterface.hpp"
+#include "Pathing.hpp"
 #include <mutex>
 #include <atomic>
 
@@ -16,7 +17,8 @@ public:
 	void				Startup(const StartupInfo& info);
 	void				Shutdown(const MatchResults& results);
 
-	void				ThreadEntry(int threadIdx);
+	void				MainThreadEntry(int threadIdx);
+	void				WorkerThreadEntry(int threadIdx);
 
 	void				ReceiveTurnState(const ArenaTurnStateForPlayer& state);
 	bool				TurnOrderRequest(PlayerTurnOrders* orders);
@@ -26,6 +28,7 @@ private:
 
 	short				GetTileIndex(short x, short y) const;
 	void				GetTileXYFromIndex(const short tileIndex, short &x, short&y);
+	IntVec2				GetTileCoordinatesFromIndex(const short tileIndex);
 
 	// Helpers
 	void				MoveRandom(AgentReport currentAgent, int recursiveCount = 0);
@@ -35,9 +38,17 @@ private:
 
 	void				MoveToQueen(AgentReport currentAgent, int recursiveCount = 0);
 	void				MoveToClosestFood(AgentReport currentAgent, int recursiveCount = 0);
+	void				PathToClosestFood(AgentReport currentAgent);
+	void				PathToQueen(AgentReport currentAgent);
 
 	AgentReport			FindFirstAgentOfType(eAgentType type);
 	eOrderCode			GetMoveOrderToTile(AgentReport currentAgent, short destPosX, short destPosY);
+
+	//Pathing
+	void				SetMapCostBasedOnAntVision(eAgentType agentType);
+	int					GetTileCostForAgentType(eAgentType agentType, eTileType tileType);
+
+
 private:
 	MatchInfo m_matchInfo;
 	DebugInterface* m_debugInterface;
@@ -52,6 +63,13 @@ private:
 	PlayerTurnOrders m_turnOrders;
 
 	AgentReport m_queenReport;
+
+	Pather m_pather;
+	Pather m_scoutPather;
+	Pather m_soldierPather;
+	Pather m_workerPather;
+
+	PathSolver*	m_pathSolver;
 
 	int			m_numWorkers = 0;
 	int			m_numSoldiers = 0;

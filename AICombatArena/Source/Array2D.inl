@@ -5,11 +5,13 @@ void Array2D<T>::Init(const IntVec2& size, const T& data)
 	m_size = size;
 
 	m_data.clear();
+	m_data.resize(size.x * size.y);
 
 	int vectorLength = m_size.x * m_size.y;
 	for (int index = 0; index < vectorLength; index++)
 	{
-		m_data.push_back(data);
+		//m_data.push_back(data);
+		m_data[index] = data;
 	}
 }
 

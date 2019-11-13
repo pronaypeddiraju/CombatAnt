@@ -1,9 +1,11 @@
 #define ARENA_CLIENT
 #include "ArenaPlayerInterface.hpp"
 #include "AIPlayerController.hpp"
+#include "RandomNumberGenerator.hpp"
 #include "AICommons.hpp"
 
 volatile std::atomic<bool> gCanShutDown = false;
+extern RandomNumberGenerator* g_RNG;
 
 // info collection
 //------------------------------------------------------------------------------------------------------------------------------
@@ -27,6 +29,8 @@ const char* GiveAuthorName()
 // setup
 void PreGameStartup(const StartupInfo& info)
 {
+	g_RNG = new RandomNumberGenerator(0);
+
 	// make a player
 	AIPlayerController* player = AIPlayerController::CreateInstance();
 	player->Startup(info);
@@ -49,9 +53,17 @@ void PostGameShutdown(const MatchResults& results)
 void PlayerThreadEntry(int yourThreadIdx)
 {
 	TODO("Make this threaded and use a job system with behavior trees");
-
 	AIPlayerController* player = AIPlayerController::GetInstance();
-	player->ThreadEntry(yourThreadIdx);
+	if (yourThreadIdx = 0)
+	{
+		//Keep this to be the main thread
+		//player->MainThreadEntry(yourThreadIdx);
+		
+	}
+	else
+	{
+		player->WorkerThreadEntry(yourThreadIdx);
+	}
 }
 
 // Turn
