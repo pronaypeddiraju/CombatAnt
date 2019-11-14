@@ -1,7 +1,7 @@
 #include "AStarPathing.hpp"
 #include "MathUtils.hpp"
 
-Path Pather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<float>& tileCosts)
+Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<int>& tileCosts)
 {
 	// m_pathInfo lives on Pather. It is the current std::vector<PathInfo>
 
@@ -27,16 +27,30 @@ Path Pather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDi
 
 		for (int i = 0; i < validNeighbors; i++)
 		{
-			CalculateCostsForTileIndex(neighbors[i], endTileIndex, mapDimensions, tileCosts);
-			m_pathInfo[neighbors[i]].parentIndex = currentIndex;
-
-			if (m_pathInfo[neighbors[i]].pathState == PATH_STATE_UNVISITED)
+			bool canPath = CalculateCostsForTileIndex(neighbors[i], endTileIndex, mapDimensions, tileCosts);
+			if (canPath)
 			{
-				m_pathInfo[neighbors[i]].pathState = PATH_STATE_VISITED;
-				m_openTileIndexList.push_back(neighbors[i]);
+				m_pathInfo[neighbors[i]].parentIndex = currentIndex;
+
+				if (m_pathInfo[neighbors[i]].pathState == PATH_STATE_UNVISITED)
+				{
+					m_pathInfo[neighbors[i]].pathState = PATH_STATE_VISITED;
+					m_openTileIndexList.push_back(neighbors[i]);
+				}
 			}
+			/*
+			//When the path cost is too high return an empty path
+			else
+			{
+				//The cost is too high to path
+				Path path;
+				return path;
+			}
+			*/
 		}
 	}
+
+
 
 	// Work backwards from our Termination Point to the Starting Point;
 	Path path;
@@ -70,13 +84,13 @@ Path Pather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDi
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-int Pather::SelectFromAndUpdateOpenIndexList()
+int AStarPather::SelectFromAndUpdateOpenIndexList()
 {
 	// Get my Best Index from the Open List and then remove it from the Open List;
 	int counter = 0;
 	int eraseSlot = 0;
 	int smallestCostIndex = m_openTileIndexList.front();
-	float smallestCost = m_pathInfo[smallestCostIndex].fCost;
+	int smallestCost = m_pathInfo[smallestCostIndex].fCost;
 
 	for (int tileIndex : m_openTileIndexList)
 	{
@@ -112,7 +126,7 @@ bool IsContained(const IntVec2 tile, const IntVec2& dimensions)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-int Pather::PopulateBoundedNeighbors(const int currentTileIdex, const IntVec2& tileDimensions, int* outNeighbors)
+int AStarPather::PopulateBoundedNeighbors(const int currentTileIdex, const IntVec2& tileDimensions, int* outNeighbors)
 {
 	IntVec2 currentTile = GetTileCoordinatesFromIndex(currentTileIdex, tileDimensions);
 	IntVec2 northTile = IntVec2(currentTile.x, currentTile.y + 1);
@@ -151,7 +165,7 @@ int Pather::PopulateBoundedNeighbors(const int currentTileIdex, const IntVec2& t
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-IntVec2 Pather::GetTileCoordinatesFromIndex(const short tileIndex, const IntVec2 mapDims)
+IntVec2 AStarPather::GetTileCoordinatesFromIndex(const short tileIndex, const IntVec2 mapDims)
 {
 	IntVec2 tileCoords;
 	tileCoords.x = tileIndex % mapDims.x;
@@ -160,18 +174,27 @@ IntVec2 Pather::GetTileCoordinatesFromIndex(const short tileIndex, const IntVec2
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void Pather::CalculateCostsForTileIndex(const int currentTileIndex, const int terminationPointIndex, const IntVec2& mapDimensions, const std::vector<float>& tileCosts_, bool isStart /*= false*/)
+bool AStarPather::CalculateCostsForTileIndex(const int currentTileIndex, const int terminationPointIndex, const IntVec2& mapDimensions, const std::vector<int>& tileCosts_, bool isStart /*= false*/)
 {
 	if (!isStart)
 	{
 		m_pathInfo[currentTileIndex].gCost = tileCosts_[currentTileIndex];
-		m_pathInfo[currentTileIndex].hCost = (float)GetManhattanDistance(GetTileCoordinatesFromIndex(currentTileIndex, mapDimensions), GetTileCoordinatesFromIndex(terminationPointIndex, mapDimensions));
+		m_pathInfo[currentTileIndex].hCost = GetManhattanDistance(GetTileCoordinatesFromIndex(currentTileIndex, mapDimensions), GetTileCoordinatesFromIndex(terminationPointIndex, mapDimensions));
 		m_pathInfo[currentTileIndex].fCost = m_pathInfo[currentTileIndex].gCost + m_pathInfo[currentTileIndex].hCost;
+
+		if (m_pathInfo[currentTileIndex].fCost < 99999)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 	else
 	{
 		m_pathInfo[currentTileIndex].gCost = tileCosts_[currentTileIndex];
-		m_pathInfo[currentTileIndex].hCost = (float)GetManhattanDistance(GetTileCoordinatesFromIndex(currentTileIndex, mapDimensions), GetTileCoordinatesFromIndex(terminationPointIndex, mapDimensions));
+		m_pathInfo[currentTileIndex].hCost = GetManhattanDistance(GetTileCoordinatesFromIndex(currentTileIndex, mapDimensions), GetTileCoordinatesFromIndex(terminationPointIndex, mapDimensions));
 		m_pathInfo[currentTileIndex].fCost = 0;
 		m_pathInfo[currentTileIndex].pathState = PATH_STATE_FINISHED;
 
@@ -189,5 +212,7 @@ void Pather::CalculateCostsForTileIndex(const int currentTileIndex, const int te
 				m_openTileIndexList.push_back(neighbors[i]);
 			}
 		}
+
+		return true;
 	}
 }

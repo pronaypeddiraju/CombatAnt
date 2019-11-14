@@ -1,6 +1,6 @@
 #pragma once
 #include "ArenaPlayerInterface.hpp"
-#include "Pathing.hpp"
+#include "AStarPathing.hpp"
 #include <mutex>
 #include <atomic>
 
@@ -31,24 +31,36 @@ private:
 	IntVec2				GetTileCoordinatesFromIndex(const short tileIndex);
 
 	// Helpers
-	void				MoveRandom(AgentReport currentAgent, int recursiveCount = 0);
+	void				MoveRandom(AgentReport& currentAgent, int recursiveCount = 0);
 	void				AddOrder(AgentID agent, eOrderCode order);
-	void				ReturnClosestAmong(AgentReport currentAgent, short &returnX, short &returnY, short tile1X, short tile1Y, short tile2X, short tile2Y);
-	bool				CheckTileSafetyForMove(AgentReport currentAgent, eOrderCode order);
+	void				ReturnClosestAmong(AgentReport& currentAgent, short &returnX, short &returnY, short tile1X, short tile1Y, short tile2X, short tile2Y);
+	bool				CheckTileSafetyForMove(AgentReport& currentAgent, eOrderCode order);
 
-	void				MoveToQueen(AgentReport currentAgent, int recursiveCount = 0);
-	void				MoveToClosestFood(AgentReport currentAgent, int recursiveCount = 0);
-	void				PathToClosestFood(AgentReport currentAgent);
-	void				PathToQueen(AgentReport currentAgent);
+	void				MoveToQueen(AgentReport& currentAgent, int recursiveCount = 0);
+	void				MoveToClosestFood(AgentReport& currentAgent, int recursiveCount = 0);
+	void				PathToClosestFood(AgentReport& currentAgent);
+	void				PathToClosestEnemy(AgentReport& currentAgent);
+	void				PathToFarthestVisible(AgentReport& currentAgent);
+	void				PathToQueen(AgentReport& currentAgent);
 
-	AgentReport			FindFirstAgentOfType(eAgentType type);
-	eOrderCode			GetMoveOrderToTile(AgentReport currentAgent, short destPosX, short destPosY);
+	IntVec2				GetFarthestObservedTile(const AgentReport& currentAgent);
+	IntVec2				GetFarthestUnObservedTile(const AgentReport& currentAgent);
+
+	AgentReport*		FindFirstAgentOfType(eAgentType type);
+	int					FindClosestEnemy(AgentReport& currentAgent);
+	eOrderCode			GetMoveOrderToTile(AgentReport& currentAgent, short destPosX, short destPosY);
 
 	//Pathing
-	void				SetMapCostBasedOnAntVision(eAgentType agentType);
+	void				SetMapCostBasedOnAntVision(eAgentType agentType, std::vector<int>& costMap);
 	int					GetTileCostForAgentType(eAgentType agentType, eTileType tileType);
+	bool				IsTileSafeForAgentType(eTileType tileType, eAgentType agentType);
+	bool				IsTileSafeForQueen(eTileType tileType);
+	bool				IsTileSafeForScout(eTileType tileType);
+	bool				IsTileSafeForSoldier(eTileType tileType);
+	bool				IsTileSafeForWorker(eTileType tileType);
 
-
+	bool				IsThisAgentQueen(AgentReport& report);
+	int					GetClosestQueenTileIndex(AgentReport& report);
 private:
 	MatchInfo m_matchInfo;
 	DebugInterface* m_debugInterface;
@@ -62,15 +74,22 @@ private:
 	ArenaTurnStateForPlayer m_currentTurnInfo;
 	PlayerTurnOrders m_turnOrders;
 
-	AgentReport m_queenReport;
+	std::vector<AgentReport> m_queenReports;
+	AgentReport m_mainQueen;
 
-	Pather m_pather;
-	Pather m_scoutPather;
-	Pather m_soldierPather;
-	Pather m_workerPather;
+	//Pather m_pather;
+	//Pather m_scoutPather;
+	//Pather m_soldierPather;
+	//Pather m_workerPather;
+	AStarPather m_pather;
 
-	PathSolver*	m_pathSolver;
+	std::vector<int>	m_costMapWorkers;
+	std::vector<int>	m_costMapSoldiers;
+	std::vector<int>	m_costMapScouts;
+
 
 	int			m_numWorkers = 0;
 	int			m_numSoldiers = 0;
+	int			m_numScouts = 0;
+	int			m_numQueens = 1;
 };

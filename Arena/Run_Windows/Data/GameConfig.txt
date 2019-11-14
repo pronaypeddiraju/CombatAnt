@@ -19,6 +19,6 @@ autoMap="Median"
 autoMatch="Free For All"
 autoPlayers="*"
 
-nutrientPenaltyPerFault = 0
-agentsKilledPerFault = 0
+nutrientPenaltyPerFault = 1000
+agentsKilledPerFault = 1
 

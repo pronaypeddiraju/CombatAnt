@@ -1,5 +1,4 @@
 #pragma once
-#include <corecrt_math.h>
 #include <vector>
 #include "IntVec2.hpp"
 
@@ -10,25 +9,25 @@ enum ePathState
 	PATH_STATE_FINISHED,
 };
 
-struct PathInfo_T
+struct AStarPathInfo_T
 {
-	float fCost = INFINITY;	//Actual tile cost
+	int fCost = INT_MAX;	//Actual tile cost
 
-	float gCost = 0;	//Cost to move into
-	float hCost = 0;	//Heuristic cost
+	int gCost = 0;	//Cost from tileCosts argument
+	int hCost = 0;	//Heuristic cost
 
 	int parentIndex = -1;
 	ePathState pathState = PATH_STATE_UNVISITED;
 };
 
 typedef std::vector<IntVec2> Path;
-typedef std::vector<PathInfo_T> PathInfo;
+typedef std::vector<AStarPathInfo_T> PathInfo;
 
-class Pather
+class AStarPather
 {
 public:
-	Path			CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<float>& tileCosts);
-	void			CalculateCostsForTileIndex(const int currentTileIndex, const int terminationPointIndex, const IntVec2& tileDimensions, const std::vector<float>& tileCosts_, bool isStart = false);
+	Path			CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<int>& tileCosts);
+	bool			CalculateCostsForTileIndex(const int currentTileIndex, const int terminationPointIndex, const IntVec2& tileDimensions, const std::vector<int>& tileCosts_, bool isStart = false);
 	int				SelectFromAndUpdateOpenIndexList();
 	int				PopulateBoundedNeighbors(const int currentTileIdex, const IntVec2& tileDimensions, int* outNeighbors);
 
