@@ -190,7 +190,6 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 						if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
 						{
 							MoveRandom(report);
-							//PathToQueen(report);
 						}
 						else
 						{
@@ -215,7 +214,14 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 
 			case AGENT_TYPE_SOLDIER:
 			{
-				PathToClosestEnemy(report);
+				if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+				{
+					MoveRandom(report);
+				}
+				else
+				{
+					PathToClosestEnemy(report);
+				}
 			}
 				break;
 
