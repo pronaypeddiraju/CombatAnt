@@ -5,16 +5,17 @@ fullscreen="false"
 dpiAware="true"
 useFSAA="true"
 showFPS="true"
-forceMapSeed="0"
-forceMapSize="0"
 
 playerFolder="Players"
-
 agentDefinitionFile="./Data/AgentDefinitions.xml"
 
 allowRemotePause=true
 allowRemoteDebug=true
+allowMoodText=true
+autoRestart=false
 
+forceMapSeed="0"
+forceMapSize="0"
 autoMap="Median"
 autoMatch="Free For All"
 autoPlayers="*"

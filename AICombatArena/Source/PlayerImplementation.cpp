@@ -3,6 +3,7 @@
 #include "AIPlayerController.hpp"
 #include "RandomNumberGenerator.hpp"
 #include "AICommons.hpp"
+#include "ErrorWarningAssert.hpp"
 
 volatile std::atomic<bool> gCanShutDown = false;
 extern RandomNumberGenerator* g_RNG;
@@ -54,15 +55,16 @@ void PlayerThreadEntry(int yourThreadIdx)
 {
 	TODO("Make this threaded and use a job system with behavior trees");
 	AIPlayerController* player = AIPlayerController::GetInstance();
-	if (yourThreadIdx = 0)
+	if (yourThreadIdx == 0)
 	{
 		//Keep this to be the main thread
 		//player->MainThreadEntry(yourThreadIdx);
-		
+		player->WorkerThreadEntry(yourThreadIdx);
+		DebuggerPrintf("Test");
 	}
 	else
 	{
-		player->WorkerThreadEntry(yourThreadIdx);
+		//player->WorkerThreadEntry(yourThreadIdx);
 	}
 }
 

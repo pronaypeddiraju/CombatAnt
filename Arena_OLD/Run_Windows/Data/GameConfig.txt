@@ -6,15 +6,20 @@ dpiAware="true"
 useFSAA="true"
 showFPS="true"
 forceMapSeed="0"
+forceMapSize="0"
 
 playerFolder="Players"
-mapFolder="Maps"
 
 agentDefinitionFile="./Data/AgentDefinitions.xml"
 
 allowRemotePause=true
 allowRemoteDebug=true
+autoRestart=false
 
-autoMap="someMapName,"
+autoMap="Median"
+autoMatch="Free For All"
 autoPlayers="*"
+
+nutrientPenaltyPerFault = 1000
+agentsKilledPerFault = 1
 

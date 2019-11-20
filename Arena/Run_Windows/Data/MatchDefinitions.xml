@@ -3,7 +3,7 @@
 <MatchDefinitions>
    <MatchDefinition
       name="Free For All"
-      minTurnTime="0.030"
+      minTurnTime="0.060"
       mapSizeOverride="64"
       maxPopulation="128"
       startingNutrientsPerPlayer="2000"

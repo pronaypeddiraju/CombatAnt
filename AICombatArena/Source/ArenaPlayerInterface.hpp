@@ -19,17 +19,19 @@
 // 9: Added a RequestPauseAfterTurn() to the debug interface; 
 // 10: changed eOrderCode storage type to unsigned char (was default-int)
 // 11: Removed some redudnant order result codes, and added nutrient loss information to given stats; 
+// 11.1: Added new emotes - does not break old version, so not updating version
+// 12: Exposed SetMoodText() function in DebugInterface struct; changes one-line player emote text
 //-----------------------------------------------------------------------------------------------
-constexpr int	COMMON_INTERFACE_VERSION_NUMBER		= 11;
+constexpr int	COMMON_INTERFACE_VERSION_NUMBER = 12;
 
 
 //-----------------------------------------------------------------------------------------------
 // Macros
 //-----------------------------------------------------------------------------------------------
 #if defined( ARENA_SERVER )
-	#define DLL __declspec( dllimport )
+#define DLL __declspec( dllimport )
 #else // ARENA_PLAYER
-	#define DLL __declspec( dllexport )
+#define DLL __declspec( dllexport )
 #endif
 
 //-----------------------------------------------------------------------------------------------
@@ -46,47 +48,47 @@ typedef unsigned int	AgentID;	// unique per agent, highest byte is agent's ownin
 
 // Hard limit - actual limits will be provided during
 // startup, and may (typically) be much lower
-constexpr short	MAX_ARENA_WIDTH						= 256;
-constexpr int	MAX_ARENA_TILES						= (MAX_ARENA_WIDTH * MAX_ARENA_WIDTH);
-constexpr char	MAX_PLAYERS							= 32;
-constexpr char	MAX_TEAMS							= MAX_PLAYERS;
-constexpr char	MAX_PLAYERS_PER_TEAM				= MAX_PLAYERS;
+constexpr short	MAX_ARENA_WIDTH = 256;
+constexpr int	MAX_ARENA_TILES = (MAX_ARENA_WIDTH * MAX_ARENA_WIDTH);
+constexpr char	MAX_PLAYERS = 32;
+constexpr char	MAX_TEAMS = MAX_PLAYERS;
+constexpr char	MAX_PLAYERS_PER_TEAM = MAX_PLAYERS;
 
-constexpr int	MAX_AGENTS_PER_PLAYER				= 256;
-constexpr int	MAX_ORDERS_PER_PLAYER				= MAX_AGENTS_PER_PLAYER;
-constexpr int	MAX_REPORTS_PER_PLAYER				= 2 * MAX_AGENTS_PER_PLAYER;
-constexpr int	MAX_AGENTS_TOTAL					= (MAX_PLAYERS * MAX_AGENTS_PER_PLAYER);
+constexpr int	MAX_AGENTS_PER_PLAYER = 256;
+constexpr int	MAX_ORDERS_PER_PLAYER = MAX_AGENTS_PER_PLAYER;
+constexpr int	MAX_REPORTS_PER_PLAYER = 2 * MAX_AGENTS_PER_PLAYER;
+constexpr int	MAX_AGENTS_TOTAL = (MAX_PLAYERS * MAX_AGENTS_PER_PLAYER);
 
 // special penalty values for digging/moving
-constexpr int DIG_IMPOSSIBLE						= -1; 
-constexpr int TILE_IMPASSABLE						= -1; 
+constexpr int DIG_IMPOSSIBLE = -1;
+constexpr int TILE_IMPASSABLE = -1;
 
 //-----------------------------------------------------------------------------------------------
 // Enums
 //-----------------------------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------------------------
-enum eFaultType : unsigned char 
+enum eFaultType : unsigned char
 {
-	FAULT_NONE		= 0, 
-	FAULT_TURN_START_DURATION_ELAPSED, 
-	FAULT_ORDER_FETCH_DURATION_ELAPSED, 
+	FAULT_NONE = 0,
+	FAULT_TURN_START_DURATION_ELAPSED,
+	FAULT_ORDER_FETCH_DURATION_ELAPSED,
 	FAULT_TOTAL_TURN_DURATION_ELAPSED,
-	FAULT_INVALID_ORDER, 
+	FAULT_INVALID_ORDER,
 	FAULT_DOUBLE_ORDERED_AGENT,
 	FAULT_DID_NOT_OWN_AGENT,
-	FAULT_INVALID_AGENT_ID, 
+	FAULT_INVALID_AGENT_ID,
 };
 
 //-----------------------------------------------------------------------------------------------
 enum eAgentType : unsigned char
 {
 	AGENT_TYPE_SCOUT,
-	AGENT_TYPE_WORKER, 
-	AGENT_TYPE_SOLDIER, 
+	AGENT_TYPE_WORKER,
+	AGENT_TYPE_SOLDIER,
 	AGENT_TYPE_QUEEN,
 
-	NUM_AGENT_TYPES, 
+	NUM_AGENT_TYPES,
 	INVALID_AGENT_TYPE = 0xff
 };
 
@@ -107,7 +109,7 @@ enum eOrderCode : unsigned char
 	ORDER_DIG_SOUTH,
 
 	ORDER_PICK_UP_FOOD,
-	ORDER_PICK_UP_TILE, 
+	ORDER_PICK_UP_TILE,
 	ORDER_DROP_CARRIED_OBJECT,
 
 	ORDER_BIRTH_SCOUT,
@@ -122,7 +124,10 @@ enum eOrderCode : unsigned char
 	ORDER_EMOTE_SAD,
 	ORDER_EMOTE_ANGRY,
 	ORDER_EMOTE_TAUNT,
-	ORDER_EMOTE_DANCE,
+	ORDER_EMOTE_DEPRESSED,
+	ORDER_EMOTE_CONFUSED,
+	ORDER_EMOTE_SCARED,
+	ORDER_EMOTE_ASTONISHED,
 
 	NUM_ORDERS
 };
@@ -167,11 +172,11 @@ enum eAgentOrderResult : unsigned char
 };
 
 //-----------------------------------------------------------------------------------------------
-enum eAgentState : unsigned char 
+enum eAgentState : unsigned char
 {
 	STATE_NORMAL = 0,
-	STATE_DEAD, 
-	STATE_HOLDING_FOOD, 
+	STATE_DEAD,
+	STATE_HOLDING_FOOD,
 	STATE_HOLDING_DIRT,
 
 	NUM_AGENT_STATES
@@ -179,7 +184,7 @@ enum eAgentState : unsigned char
 
 
 //-----------------------------------------------------------------------------------------------
-enum eTileType : unsigned char 
+enum eTileType : unsigned char
 {
 	TILE_TYPE_AIR,				// open space, traversable by most/all agent types
 
@@ -207,28 +212,28 @@ struct Color8
 		: r(0)
 		, g(0)
 		, b(0)
-		, a(255) 
+		, a(255)
 	{}
 
-	Color8( unsigned char redByte, 
-		unsigned char greenByte, 
-		unsigned char blueByte, 
-		unsigned char alphaByte = 255 )
+	Color8(unsigned char redByte,
+		unsigned char greenByte,
+		unsigned char blueByte,
+		unsigned char alphaByte = 255)
 		: r(redByte)
 		, g(greenByte)
 		, b(blueByte)
 		, a(alphaByte)
 	{}
 
-	unsigned char r, g, b, a; 
+	unsigned char r, g, b, a;
 };
 
 
 //-----------------------------------------------------------------------------------------------
 struct VertexPC
 {
-	float x, y; 
-	Color8 rgba; 
+	float x, y;
+	Color8 rgba;
 };
 
 
@@ -257,9 +262,9 @@ struct MatchInfo // information about the match about to be played
 {
 	int numPlayers;		// number of players (with unique PlayerIDs) in this match
 	int numTeams;		// <numPlayers> in brawl, 2 for 5v5, 1 for co-op survival
-	
+
 	short mapWidth;		// width & height of [always square] map; tileX,tileY < mapWidth
-	
+
 	bool fogOfWar;				// if false, all tiles & agents are always visible
 	bool teamSharedVision;		// if true, teammates share combined visibility
 	bool teamSharedResources;	// if true, teammates share a single combined "nutrients" score
@@ -295,7 +300,7 @@ struct PlayerInfo // server-assigned information about your Player instance in t
 //-----------------------------------------------------------------------------------------------
 // Structure given for each of your agents (and/or each of your orders just previously issued)
 //
-struct AgentReport 
+struct AgentReport
 {
 	AgentID				agentID;		// your agent's unique ID #
 
@@ -309,7 +314,7 @@ struct AgentReport
 	eAgentType			type;			// type of agent (permanent/unique per agent)
 	eAgentState			state;			// special status of agent (carrying something, etc.)
 	eAgentOrderResult	result;			// result of agent's previously issued order
-}; 
+};
 
 // -----------------------------------------------------------------------------------------------
 struct ObservedAgent
@@ -320,14 +325,14 @@ struct ObservedAgent
 
 	short		tileX;				// just observed at these tile coordinates; (0,0) is bottom-left
 	short		tileY;
-	
+
 	short		receivedCombatDamage; // 0 or 1 for most agents, nutrient damage for queen
 	short		receivedSuffocationDamage; // 0 or 1 for most agents, nutrient damage for queen
 
 	eAgentType	type;				// observed agent's type
 	eAgentState	state;				// special status of agent (carrying something, etc.)
 	eOrderCode	lastObservedAction;	// what this agent just did / was trying to do (last orders)
-}; 
+};
 
 
 //------------------------------------------------------------------------------------------------
@@ -336,7 +341,7 @@ struct ObservedAgent
 struct AgentOrder
 {
 	AgentID agentID;
-	eOrderCode order; 
+	eOrderCode order;
 };
 
 //------------------------------------------------------------------------------------------------
@@ -347,15 +352,15 @@ struct AgentOrder
 struct PlayerTurnOrders
 {
 	AgentOrder orders[MAX_ORDERS_PER_PLAYER];
-	int numberOfOrders; 
-}; 
+	int numberOfOrders;
+};
 
 
 //------------------------------------------------------------------------------------------------
 // Information about the server and match provided when PreGameStartup() is called by the server.
 //
-typedef void (*EventFunc)( const char* line ); 
-typedef void (*RegisterEventFunc)( const char* eventName, EventFunc func );
+typedef void(*EventFunc)(const char* line);
+typedef void(*RegisterEventFunc)(const char* eventName, EventFunc func);
 struct StartupInfo
 {
 	MatchInfo	matchInfo;			// info about the match itself (numPlayers, mapWidth, etc.)
@@ -385,7 +390,7 @@ struct ArenaTurnStateForPlayer
 	int currentNutrients;
 
 	// fault reporting to clients
-	int numFaults; 
+	int numFaults;
 	int nutrientsLostDueToFault;
 	int nutrientsLostDueToQueenDamage;
 	int nutrientsLostDueToQueenSuffocation;
@@ -396,13 +401,13 @@ struct ArenaTurnStateForPlayer
 
 	// List of all agents (besides yours) within your current visibility
 	ObservedAgent observedAgents[MAX_AGENTS_TOTAL];
-	int numObservedAgents; 
+	int numObservedAgents;
 
 	// Copy of the entire map (mapWidth*mapWidth entries!); tile type is TILE_TYPE_UNSEEN for
 	//	tiles not within your current visibility.  Unseen tiles always report "false" for food.
 	eTileType observedTiles[MAX_ARENA_TILES];
-	bool tilesThatHaveFood[MAX_ARENA_TILES]; 
-}; 
+	bool tilesThatHaveFood[MAX_ARENA_TILES];
+};
 
 // -----------------------------------------------------------------------------------------------
 struct MatchResults
@@ -423,22 +428,24 @@ struct MatchResults
 // For example, tile 7,3 extends from mins(6.5,2.5) to maxs(7.5,3.5), with center at (7.0,3.0).
 // All drawing is clipped to world space, i.e. mins(-.5,-.5) to maxs(mapWidth-.5,mapWidth-.5).
 //-----------------------------------------------------------------------------------------------
-typedef void (*RequestPauseFunc)(); 
-typedef void (*LogTextFunc)( char const* format, ... ); 
-typedef void (*DrawVertexArrayFunc)( int count, const VertexPC* vertices );
-typedef void (*DrawWorldTextFunc)( 
+typedef void(*RequestPauseFunc)();
+typedef void(*LogTextFunc)(char const* format, ...);
+typedef void(*SetMoodTextFunc)(char const* format, ...);
+typedef void(*DrawVertexArrayFunc)(int count, const VertexPC* vertices);
+typedef void(*DrawWorldTextFunc)(
 	float posX, float posY,
-	float anchorU, float anchorV, 
+	float anchorU, float anchorV,
 	float height, // 1.0 would be text whose characters are one tile high
-	Color8 color, 
-	char const* format, ... ); 
-typedef void (*FlushQueuedDrawsFunc)(); 
+	Color8 color,
+	char const* format, ...);
+typedef void(*FlushQueuedDrawsFunc)();
 //------------------------------------------------------------------------------------------------
 struct DebugInterface
 {
 	RequestPauseFunc		RequestPause;			// Pause the simulation (can be ignored by game)
 	LogTextFunc				LogText;				// Print to dev console (and possibly log file)
-	
+	SetMoodTextFunc			SetMoodText;			// Call anytime to change "mood" text on player panel
+
 	DrawWorldTextFunc		QueueDrawWorldText;		// Draw (aligned) overlay text in world space
 	DrawVertexArrayFunc		QueueDrawVertexArray;	// Draw untextured geometry in world space
 	FlushQueuedDrawsFunc	FlushQueuedDraws;		// Call after queuing to commit and show draws
@@ -460,30 +467,30 @@ struct DebugInterface
 //-----------------------------------------------------------------------------------------------
 #if !defined(ARENA_SERVER)
 	// Functions exported by the DLL for the server (.EXE) to call
-	extern "C"
-	{
-		// info collection
-		DLL int GiveCommonInterfaceVersion();	// DLL should return COMMON_INTERFACE_VERSION_NUMBER
-		DLL const char* GivePlayerName();		// DLL should return the name of the AI (can be whatever)
-		DLL const char* GiveAuthorName();		// DLL should return the actual human author's name
+extern "C"
+{
+	// info collection
+	DLL int GiveCommonInterfaceVersion();	// DLL should return COMMON_INTERFACE_VERSION_NUMBER
+	DLL const char* GivePlayerName();		// DLL should return the name of the AI (can be whatever)
+	DLL const char* GiveAuthorName();		// DLL should return the actual human author's name
 
-		// setup
-		DLL void PreGameStartup( const StartupInfo& info );			// Server provides player/match info
-		DLL void PostGameShutdown( const MatchResults& results );	// Server signals match end; exit loops
-		DLL void PlayerThreadEntry( int yourThreadIdx );			// Called in its own private thread (yours!); infinitely loop, doing async AI work, until PostGame is called
+	// setup
+	DLL void PreGameStartup(const StartupInfo& info);			// Server provides player/match info
+	DLL void PostGameShutdown(const MatchResults& results);	// Server signals match end; exit loops
+	DLL void PlayerThreadEntry(int yourThreadIdx);			// Called in its own private thread (yours!); infinitely loop, doing async AI work, until PostGame is called
 
-		// Turn
-		DLL void ReceiveTurnState( const ArenaTurnStateForPlayer& state );				// Server tells you what you see
-		DLL bool TurnOrderRequest( int turnNumber, PlayerTurnOrders* ordersToFill );	// You tell server what you do
-	}
+	// Turn
+	DLL void ReceiveTurnState(const ArenaTurnStateForPlayer& state);				// Server tells you what you see
+	DLL bool TurnOrderRequest(int turnNumber, PlayerTurnOrders* ordersToFill);	// You tell server what you do
+}
 #else
 	// Function pointer types, used by server (only) find these exported DLL functions via GetProcAddress()
-	typedef int (*GiveCommandInterfaceVersionFunc)();
-	typedef const char* (*GivePlayerNameFunc)();
-	typedef const char* (*GiveAuthorNameFunc)();
-	typedef void (*PreGameStartupFunc)( const StartupInfo& info );
-	typedef void (*PostGameShutdownFunc)( const MatchResults& results );
-	typedef void (*PlayerThreadEntryFunc)( int yourThreadIdx );
-	typedef void (*ReceiveTurnStateFunc)( const ArenaTurnStateForPlayer& state );
-	typedef bool (*TurnOrderRequestFunc)( int turnNumber, PlayerTurnOrders* ordersToFill ); 
+typedef int(*GiveCommandInterfaceVersionFunc)();
+typedef const char* (*GivePlayerNameFunc)();
+typedef const char* (*GiveAuthorNameFunc)();
+typedef void(*PreGameStartupFunc)(const StartupInfo& info);
+typedef void(*PostGameShutdownFunc)(const MatchResults& results);
+typedef void(*PlayerThreadEntryFunc)(int yourThreadIdx);
+typedef void(*ReceiveTurnStateFunc)(const ArenaTurnStateForPlayer& state);
+typedef bool(*TurnOrderRequestFunc)(int turnNumber, PlayerTurnOrders* ordersToFill);
 #endif

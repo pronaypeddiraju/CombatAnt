@@ -94,6 +94,9 @@ int AStarPather::SelectFromAndUpdateOpenIndexList()
 
 	for (int tileIndex : m_openTileIndexList)
 	{
+		if(tileIndex < 0)
+			continue;
+
 		if (m_pathInfo[tileIndex].fCost < smallestCost)
 		{
 			smallestCostIndex = tileIndex;
