@@ -26,7 +26,7 @@ typedef std::vector<AStarPathInfo_T> PathInfo;
 class AStarPather
 {
 public:
-	Path			CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<int>& tileCosts);
+	Path			CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<int>& tileCosts, int limit = 9999);
 	bool			CalculateCostsForTileIndex(const int currentTileIndex, const int terminationPointIndex, const IntVec2& tileDimensions, const std::vector<int>& tileCosts_, bool isStart = false);
 	int				SelectFromAndUpdateOpenIndexList();
 	int				PopulateBoundedNeighbors(const int currentTileIdex, const IntVec2& tileDimensions, int* outNeighbors);

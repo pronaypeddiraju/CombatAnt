@@ -1,5 +1,19 @@
-﻿  PlayerImplementation.cpp
+﻿  AIPlayerController.cpp
+  AStarPathing.cpp
+d:\school_git\combatant\aicombatarena\source\astarpathing.cpp(48): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+  IntVec2.cpp
+  Pathing.cpp
+  PlayerImplementation.cpp
 d:\school_git\combatant\aicombatarena\source\playerimplementation.cpp(56): warning C4083: expected 'string'; found identifier '__FILE__LINE__'
+  Vec2.cpp
+  Generating Code...
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(1203): warning C4715: 'AIPlayerController::GetTileCostForAgentType': not all control paths return a value
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(1250): warning C4715: 'AIPlayerController::IsTileSafeForQueen': not all control paths return a value
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(1231): warning C4715: 'AIPlayerController::IsTileSafeForAgentType': not all control paths return a value
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(1267): warning C4715: 'AIPlayerController::IsTileSafeForScout': not all control paths return a value
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(1284): warning C4715: 'AIPlayerController::IsTileSafeForSoldier': not all control paths return a value
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(1301): warning C4715: 'AIPlayerController::IsTileSafeForWorker': not all control paths return a value
+     Creating library D:\School_Git\CombatAnt\AICombatArena\x64\Debug\C28_Pronay_Peddiraju.lib and object D:\School_Git\CombatAnt\AICombatArena\x64\Debug\C28_Pronay_Peddiraju.exp
   AICombatArena.vcxproj -> D:\School_Git\CombatAnt\AICombatArena\x64\Debug\C28_Pronay_Peddiraju.dll
   Copying C28_Pronay_Peddiraju.dll to Arena Players folder
   D:\School_Git\CombatAnt\AICombatArena\x64\Debug\C28_Pronay_Peddiraju.dll -> D:\School_Git\CombatAnt\Arena\Run_Windows\Players\C28_Pronay_Peddiraju.dll

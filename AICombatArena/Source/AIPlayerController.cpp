@@ -103,7 +103,26 @@ void AIPlayerController::WorkerThreadEntry(int threadIdx)
 			turnState = m_currentTurnInfo;
 			lk.unlock();
 
-			//m_pather.Init(mapSize, 1);
+			/*
+			if (!m_workerCostMapInitialized)
+			{
+				m_workerCostMapInitialized = true;
+				//SetMapCostBasedOnAntVision(AGENT_TYPE_WORKER, m_costMapWorkers);
+			}
+
+			if (!m_scoutCostMapInitialized)
+			{
+				m_scoutCostMapInitialized = true;
+				//SetMapCostBasedOnAntVision(AGENT_TYPE_SCOUT, m_costMapScouts);
+			}
+
+			if (!m_soldierCostMapInitialized)
+			{
+				m_soldierCostMapInitialized = true;
+				//SetMapCostBasedOnAntVision(AGENT_TYPE_SOLDIER, m_costMapSoldiers);
+			}
+			*/
+
 			SetMapCostBasedOnAntVision(AGENT_TYPE_WORKER, m_costMapWorkers);
 			SetMapCostBasedOnAntVision(AGENT_TYPE_SCOUT, m_costMapScouts);
 			SetMapCostBasedOnAntVision(AGENT_TYPE_SOLDIER, m_costMapSoldiers);
@@ -166,149 +185,367 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 	// you will be given one report per agent you own (or did own the previous frame
 	// in case of death).  For any live agent, you may make a command
 	// this turn
-	for (int i = 0; i < agentCount; ++i)
+	
+	if (m_matchInfo.numTurnsBeforeSuddenDeath > turnState.turnNumber)
 	{
-		AgentReport& report = turnState.agentReports[i];
-		if ((report.state != STATE_DEAD) && (report.exhaustion == 0))
+		//while(m_agentIterator < agentCount)
+		for (int i = 0; i < agentCount; ++i)
 		{
-			// agent is alive and ready to get an order, so do something
-			switch (report.type)
-			{
-				// scout will drunkely walk
-			case AGENT_TYPE_SCOUT:
-				//MoveRandom(report);
-				PathToFarthestVisible(report);
-				break;
+			//If using while loop with atomic agent count iterator
+			//AgentReport& report = turnState.agentReports[m_agentIterator];
 
-				// moves randomly, but if they fall on food, will pick it up if hands are free
-			case AGENT_TYPE_WORKER:
-				if (report.state == STATE_HOLDING_FOOD)
+			AgentReport& report = turnState.agentReports[i];
+			if ((report.state != STATE_DEAD) && (report.exhaustion == 0))
+			{
+				// agent is alive and ready to get an order, so do something
+				switch (report.type)
 				{
-					if (report.tileX == m_queenReports[0].tileX && report.tileY == m_queenReports[0].tileY)
+					// scout will drunkely walk
+				case AGENT_TYPE_SCOUT:
+					//MoveRandom(report);
+					PathToFarthestVisible(report);
+					break;
+
+					// moves randomly, but if they fall on food, will pick it up if hands are free
+				case AGENT_TYPE_WORKER:
+					if (report.state == STATE_HOLDING_FOOD)
 					{
-						AddOrder(report.agentID, ORDER_DROP_CARRIED_OBJECT);
-					}
-					else
-					{
-						if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+						if (report.tileX == m_queenReports[0].tileX && report.tileY == m_queenReports[0].tileY)
 						{
-							MoveRandom(report);
+							AddOrder(report.agentID, ORDER_DROP_CARRIED_OBJECT);
 						}
 						else
 						{
-							PathToQueen(report);
+							if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+							{
+								MoveRandom(report);
+							}
+							else
+							{
+								PathToQueen(report);
+							}
 						}
-					}
-				}
-				else
-				{
-					int tileIdx = GetTileIndex(report.tileX, report.tileY);
-					bool tileHasFood = m_currentTurnInfo.tilesThatHaveFood[tileIdx];
-					if (tileHasFood)
-					{
-						AddOrder(report.agentID, ORDER_PICK_UP_FOOD);
 					}
 					else
 					{
-						PathToClosestFood(report);
+						int tileIdx = GetTileIndex(report.tileX, report.tileY);
+						bool tileHasFood = m_currentTurnInfo.tilesThatHaveFood[tileIdx];
+						if (tileHasFood)
+						{
+							AddOrder(report.agentID, ORDER_PICK_UP_FOOD);
+						}
+						else
+						{
+							PathToClosestFood(report);
+						}
 					}
-				}
-				break;
+					break;
 
-			case AGENT_TYPE_SOLDIER:
-			{
-				if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+				case AGENT_TYPE_SOLDIER:
 				{
-					MoveRandom(report);
-				}
-				else
-				{
-					PathToClosestEnemy(report);
-				}
-			}
-				break;
-
-				// queen either moves or spawns randomly
-			case AGENT_TYPE_QUEEN:
-			{
-				bool reportFound = false;
-				for (int i = 0; i < m_numQueens; i++)
-				{
-					if (m_queenReports[i].agentID == report.agentID)
-					{
-						reportFound = true;
-					}
-				}
-
-				if (!reportFound)
-				{
-					m_queenReports.push_back(report);
-				}
-
-				if (report.receivedCombatDamage > 0)
-				{
-					eOrderCode order = (eOrderCode)(ORDER_BIRTH_SOLDIER);
-					AddOrder(report.agentID, order);
-					m_numSoldiers++;
-				}
-				else if (m_numSoldiers < MAX_SOLDIERS && m_numWorkers == MAX_WORKERS * m_numQueens&& m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_SOLDIER)
-				{
-					eOrderCode order = (eOrderCode)(ORDER_BIRTH_SOLDIER);
-					AddOrder(report.agentID, order);
-					m_numSoldiers++;
-				}
-				else if (m_numScouts < MAX_SCOUTS && m_numSoldiers == MAX_SOLDIERS && m_numWorkers == MAX_WORKERS * m_numQueens && m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_SCOUT)
-				{
-					eOrderCode order = (eOrderCode)(ORDER_BIRTH_SCOUT);
-					AddOrder(report.agentID, order);
-					m_numScouts++;
-				}
-				else if (m_numQueens < MAX_QUEENS && m_numScouts == MAX_SCOUTS && m_numSoldiers == MAX_SOLDIERS && m_numWorkers == MAX_WORKERS * m_numQueens && m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_QUEEN * m_numQueens)
-				{
-					eOrderCode order = (eOrderCode)(ORDER_BIRTH_QUEEN);
-					AddOrder(report.agentID, order);
-					m_numQueens++;
-				}
-				else if(m_numWorkers < MAX_WORKERS * m_numQueens && report.exhaustion == 0 && m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_WORKER)
-				{
-					eOrderCode order = (eOrderCode)(ORDER_BIRTH_WORKER);
-					AddOrder(report.agentID, order);
-					m_numWorkers++;
-				}
-				else
-				{
-					/*
-					if (report.agentID != m_mainQueen.agentID)
+					if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
 					{
 						MoveRandom(report);
 					}
-					*/
+					else
+					{
+						PathToClosestEnemy(report);
+					}
 				}
-			} break;
+				break;
+
+				// queen either moves or spawns randomly
+				case AGENT_TYPE_QUEEN:
+				{
+					bool reportFound = false;
+					for (int i = 0; i < m_numQueens; i++)
+					{
+						if (m_queenReports[i].agentID == report.agentID)
+						{
+							reportFound = true;
+						}
+					}
+
+					if (!reportFound)
+					{
+						m_queenReports.push_back(report);
+					}
+
+					if (report.receivedCombatDamage > 0)
+					{
+						eOrderCode order = (eOrderCode)(ORDER_BIRTH_SOLDIER);
+						AddOrder(report.agentID, order);
+						m_numSoldiers++;
+					}
+					else if (m_numSoldiers < MAX_SOLDIERS && m_numWorkers == MAX_WORKERS * m_numQueens&& m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_SOLDIER)
+					{
+						eOrderCode order = (eOrderCode)(ORDER_BIRTH_SOLDIER);
+						AddOrder(report.agentID, order);
+						m_numSoldiers++;
+					}
+					else if (m_numScouts < MAX_SCOUTS && m_numSoldiers == MAX_SOLDIERS && m_numWorkers == MAX_WORKERS * m_numQueens && m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_SCOUT)
+					{
+						eOrderCode order = (eOrderCode)(ORDER_BIRTH_SCOUT);
+						AddOrder(report.agentID, order);
+						m_numScouts++;
+					}
+					else if (m_numQueens < MAX_QUEENS && m_numScouts == MAX_SCOUTS && m_numSoldiers == MAX_SOLDIERS && m_numWorkers == MAX_WORKERS * m_numQueens && m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_QUEEN * m_numQueens)
+					{
+						eOrderCode order = (eOrderCode)(ORDER_BIRTH_QUEEN);
+						AddOrder(report.agentID, order);
+						m_numQueens++;
+					}
+					else if (m_numWorkers < MAX_WORKERS * m_numQueens && report.exhaustion == 0 && m_currentTurnInfo.currentNutrients > MIN_NUTRIENTS_TO_SPAWN_WORKER)
+					{
+						eOrderCode order = (eOrderCode)(ORDER_BIRTH_WORKER);
+						AddOrder(report.agentID, order);
+						m_numWorkers++;
+					}
+					else
+					{
+						/*
+						if (report.agentID != m_mainQueen.agentID)
+						{
+							MoveRandom(report);
+						}
+						*/
+					}
+				}
+				break;
+				}
 			}
-		}
-		else if (report.state == STATE_DEAD)
-		{
-			switch (report.type)
+			else if (report.state == STATE_DEAD)
 			{
-			case AGENT_TYPE_SOLDIER:
-				m_numSoldiers--;
+				switch (report.type)
+				{
+				case AGENT_TYPE_SOLDIER:
+					m_numSoldiers--;
+					break;
+				case AGENT_TYPE_WORKER:
+					m_numWorkers--;
+					break;
+				case AGENT_TYPE_SCOUT:
+					m_numScouts--;
+					break;
+				case AGENT_TYPE_QUEEN:
+					m_numQueens--;
+					break;
+				}
+			}
+			//When using while loop instead of for, uncomment this
+			//++m_agentIterator;
+
+		}
+	}
+	else
+	{
+		//while(m_agentIterator < agentCount)
+		for (int i = 0; i < agentCount; ++i)
+		{
+			//If using while loop with atomic agent count iterator
+			//AgentReport& report = turnState.agentReports[m_agentIterator];
+
+			AgentReport& report = turnState.agentReports[i];
+			if (report.state != STATE_DEAD)
+			{
+				switch (report.type)
+				{
+				case AGENT_TYPE_SOLDIER:
+				{
+					if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+					{
+						MoveRandom(report);
+					}
+					else
+					{
+						PathToClosestEnemy(report);
+					}
+					break;
+				}
+				case AGENT_TYPE_SCOUT:
+				{
+					eOrderCode order = (eOrderCode)(ORDER_SUICIDE);
+					AddOrder(report.agentID, order);
+					m_numScouts--;
+					/*
+					if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+					{
+						MoveRandom(report);
+					}
+					else
+					{
+						PathToFarthestVisible(report);
+					}
+					*/
+					break;
+				}
+				case AGENT_TYPE_WORKER:
+				{
+					
+					if (report.state == STATE_HOLDING_FOOD)
+					{
+						if (report.tileX == m_queenReports[0].tileX && report.tileY == m_queenReports[0].tileY)
+						{
+							AddOrder(report.agentID, ORDER_DROP_CARRIED_OBJECT);
+						}
+						else
+						{
+							if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+							{
+								MoveRandom(report);
+							}
+							else
+							{
+								PathToQueen(report);
+							}
+						}
+					}
+					else
+					{
+						eOrderCode order = (eOrderCode)(ORDER_SUICIDE);
+						AddOrder(report.agentID, order);
+						m_numWorkers--;
+
+						/*
+						int tileIdx = GetTileIndex(report.tileX, report.tileY);
+						bool tileHasFood = m_currentTurnInfo.tilesThatHaveFood[tileIdx];
+						if (tileHasFood)
+						{
+							AddOrder(report.agentID, ORDER_PICK_UP_FOOD);
+						}
+						else
+						{
+							PathToClosestFood(report);
+						}
+						*/
+					}
+					
+					/*
+					if (report.state == STATE_HOLDING_DIRT)
+					{
+						int closestEnemy = FindClosestEnemy(report);
+						if (turnState.observedAgents[closestEnemy].tileX == report.tileX && turnState.observedAgents[closestEnemy].tileY == report.tileY)
+						{
+							eOrderCode order = (eOrderCode)(ORDER_DROP_CARRIED_OBJECT);
+							AddOrder(report.agentID, order);
+						}
+						else
+						{
+							if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+							{
+								MoveRandom(report);
+							}
+							else
+							{
+								PathToClosestEnemy(report);
+							}
+						}
+					}
+					else
+					{
+						IntVec2 closestDirt = FindClosestTile(report, TILE_TYPE_DIRT);
+						eTileNeighborhood dirtNeighborhood = IsPositionInNeighborhood(report, closestDirt);
+						switch (dirtNeighborhood)
+						{
+						case DIRECTION_NORTH:
+						{
+							eOrderCode order = (eOrderCode)(ORDER_DIG_NORTH);
+							AddOrder(report.agentID, order);
+						}
+						break;
+						case DIRECTION_SOUTH:
+						{
+							eOrderCode order = (eOrderCode)(ORDER_DIG_SOUTH);
+							AddOrder(report.agentID, order);
+						}
+						break;
+						case DIRECTION_EAST:
+						{
+							eOrderCode order = (eOrderCode)(ORDER_DIG_EAST);
+							AddOrder(report.agentID, order);
+						}
+						break;
+						case DIRECTION_WEST:
+						{
+							eOrderCode order = (eOrderCode)(ORDER_DIG_WEST);
+							AddOrder(report.agentID, order);
+						}
+						break;
+						case DIRECTION_THIS_TILE:
+						{
+							eOrderCode order = (eOrderCode)(ORDER_DIG_HERE);
+							AddOrder(report.agentID, order);
+						}
+						case DIRECTION_NOT_NEIGHBOR:
+						{
+							if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
+							{
+								MoveRandom(report);
+							}
+							else
+							{
+								PathToClosestDirt(report);
+							}
+						}
+						break;
+						}
+					}
+				*/
+
 				break;
-			case AGENT_TYPE_WORKER:
-				m_numWorkers--;
-				break;
-			case AGENT_TYPE_SCOUT:
-				m_numScouts--;
-				break;
+				}
+				case AGENT_TYPE_QUEEN:
+				{
+					if (report.receivedCombatDamage > 0)
+					{
+						eOrderCode order = (eOrderCode)(ORDER_BIRTH_SOLDIER);
+						AddOrder(report.agentID, order);
+						m_numSoldiers++;
+					}
+
+					/*
+					if (m_queenReports.size() > 1)
+					{
+						for (int i = 1; i < m_queenReports.size(); i++)
+						{
+							if (report.agentID == m_queenReports[i].agentID)
+							{
+								eOrderCode order = (eOrderCode)(ORDER_SUICIDE);
+								AddOrder(report.agentID, order);
+								m_numQueens--;
+								m_queenReports.erase(m_queenReports.begin() + i);
+							}
+						}
+
+						return;
+					}
+					*/
+
+					break;
+				}
+				}
+			}
+			else if (report.state == STATE_DEAD)
+			{
+				switch (report.type)
+				{
+				case AGENT_TYPE_SOLDIER:
+					m_numSoldiers--;
+					break;
+				case AGENT_TYPE_WORKER:
+					m_numWorkers--;
+					break;
+				case AGENT_TYPE_SCOUT:
+					m_numScouts--;
+					break;
+				case AGENT_TYPE_QUEEN:
+					m_numQueens--;
+					break;
+				}
 			}
 		}
-		else
-		{
-			//report.exhaustion == 0
-
-		}
-
 	}
+	
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -590,7 +827,7 @@ void AIPlayerController::PathToClosestFood(AgentReport& currentAgent)
 
 	if (destX != 9999)
 	{
-		m_currentTurnInfo.tilesThatHaveFood[closestIndex] = false;
+		//m_currentTurnInfo.tilesThatHaveFood[endIndex] = false;
 
 		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
 		eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
@@ -617,7 +854,15 @@ void AIPlayerController::PathToClosestEnemy(AgentReport& currentAgent)
 		int startIndex = GetTileIndex(currentAgent.tileX, currentAgent.tileY);
 		int endIndex = GetTileIndex(target.tileX, target.tileY);
 
-		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapSoldiers);
+		if (currentAgent.type == AGENT_TYPE_SOLDIER)
+		{
+			path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapSoldiers, m_matchInfo.mapWidth * 2);
+		}
+		else if (currentAgent.type == AGENT_TYPE_WORKER)
+		{
+			path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers, m_matchInfo.mapWidth * 2);
+		}
+		
 		if (path.size() != 0)
 		{
 			eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
@@ -649,7 +894,7 @@ void AIPlayerController::PathToFarthestVisible(AgentReport& currentAgent)
 
 	if (path.size() != 0)
 	{
-		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapScouts);
+		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapScouts, 100);
 		
 		eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
 		AddOrder(currentAgent.agentID, order);
@@ -692,6 +937,56 @@ void AIPlayerController::PathToQueen(AgentReport& currentAgent)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::PathToClosestDirt(AgentReport& currentAgent)
+{
+	short destX = 9999;
+	short destY = 9999;
+	int closestIndex = 0;
+
+	//Look for visible tiles
+	for (int dirtIndex = 0; dirtIndex < MAX_ARENA_TILES; dirtIndex++)
+	{
+		if (m_currentTurnInfo.observedTiles[dirtIndex])
+		{
+			short dirtFoundX = 0;
+			short dirtFoundY = 0;
+
+			GetTileXYFromIndex(dirtIndex, dirtFoundX, dirtFoundY);
+
+			short closestX = 0;
+			short closestY = 0;
+
+			ReturnClosestAmong(currentAgent, closestX, closestY, destX, destY, dirtFoundX, dirtFoundY);
+			if (closestX == destX && closestY == destY)
+			{
+				closestIndex = dirtIndex;
+			}
+
+			destX = closestX;
+			destY = closestY;
+		}
+	}
+
+	//Now path to the closest food
+	Path path;
+	path.clear();
+
+	int startIndex = GetTileIndex(currentAgent.tileX, currentAgent.tileY);
+	int endIndex = GetTileIndex(destX, destY);
+
+	if (destX != 9999)
+	{
+		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
+		eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
+		AddOrder(currentAgent.agentID, order);
+	}
+	else
+	{
+		MoveRandom(currentAgent);
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
 IntVec2 AIPlayerController::GetFarthestObservedTile(const AgentReport& currentAgent)
 {
 	int maxDistance = 0;
@@ -704,6 +999,7 @@ IntVec2 AIPlayerController::GetFarthestObservedTile(const AgentReport& currentAg
 			if (distance > maxDistance)
 			{
 				farthestIndex = tileIndex;
+				maxDistance = distance;
 			}
 		}
 	}
@@ -775,6 +1071,40 @@ int AIPlayerController::FindClosestEnemy(AgentReport& currentAgent)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+IntVec2 AIPlayerController::FindClosestTile(AgentReport& currentAgent, eTileType tileType)
+{
+	short destX = 9999;
+	short destY = 9999;
+	int closestIndex = 0;
+
+	//Look for visible tiles
+	for (int dirtIndex = 0; dirtIndex < MAX_ARENA_TILES; dirtIndex++)
+	{
+		if (m_currentTurnInfo.observedTiles[dirtIndex] == tileType)
+		{
+			short dirtFoundX = 0;
+			short dirtFoundY = 0;
+
+			GetTileXYFromIndex(dirtIndex, dirtFoundX, dirtFoundY);
+
+			short closestX = 0;
+			short closestY = 0;
+
+			ReturnClosestAmong(currentAgent, closestX, closestY, destX, destY, dirtFoundX, dirtFoundY);
+			if (closestX == destX && closestY == destY)
+			{
+				closestIndex = dirtIndex;
+			}
+
+			destX = closestX;
+			destY = closestY;
+		}
+	}
+
+	return IntVec2(destX, destY);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
 eOrderCode AIPlayerController::GetMoveOrderToTile(AgentReport& currentAgent, short destPosX, short destPosY)
 {
 	//Return the ordercode for move based on currentAgent position relative to destPosX and destPosY
@@ -803,6 +1133,35 @@ eOrderCode AIPlayerController::GetMoveOrderToTile(AgentReport& currentAgent, sho
 	{
 		//Dont move
 		return ORDER_HOLD;
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+eTileNeighborhood AIPlayerController::IsPositionInNeighborhood(AgentReport& currentAgent, IntVec2 position)
+{
+	if (currentAgent.tileX == position.x && currentAgent.tileY == position.y)
+	{
+		return DIRECTION_THIS_TILE;
+	}
+	else if (currentAgent.tileX == position.x && currentAgent.tileY == position.y + 1)
+	{
+		return DIRECTION_SOUTH;
+	}
+	else if (currentAgent.tileX == position.x && currentAgent.tileY == position.y - 1)
+	{
+		return DIRECTION_NORTH;
+	}
+	else if (currentAgent.tileX == position.x + 1 && currentAgent.tileY == position.y)
+	{
+		return DIRECTION_WEST;
+	}
+	else if (currentAgent.tileX == position.x - 1 && currentAgent.tileY == position.y)
+	{
+		return DIRECTION_EAST;
+	}
+	else
+	{
+		return DIRECTION_NOT_NEIGHBOR;
 	}
 }
 
@@ -994,6 +1353,7 @@ bool AIPlayerController::IsTileSafeForWorker(eTileType tileType)
 	}
 }
 
+//------------------------------------------------------------------------------------------------------------------------------
 bool AIPlayerController::IsThisAgentQueen(AgentReport& report)
 {
 	for (int i = 0; i < m_queenReports.size(); i++)
@@ -1008,6 +1368,7 @@ bool AIPlayerController::IsThisAgentQueen(AgentReport& report)
 	return false;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------
 int AIPlayerController::GetClosestQueenTileIndex(AgentReport& agentReport)
 {
 	int closestDistance = 99999;
@@ -1027,4 +1388,34 @@ int AIPlayerController::GetClosestQueenTileIndex(AgentReport& agentReport)
 
 	int tileIndex = GetTileIndex(m_queenReports[closestIndex].tileX, m_queenReports[closestIndex].tileY);
 	return tileIndex;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+int AIPlayerController::IsEnemyInNeighborhood(int closestEnemy, AgentReport& report)
+{
+	int currentTileIndex = GetTileIndex(report.tileX, report.tileY);
+
+	int inNeighborhood = -1;
+	if (closestEnemy == currentTileIndex + 1)
+	{
+		//He's EAST
+		inNeighborhood = 0;
+	}
+	else if (closestEnemy == currentTileIndex - 1)
+	{
+		//He's WEST
+		inNeighborhood = 1;
+	}
+	else if (closestEnemy == currentTileIndex + m_matchInfo.mapWidth)
+	{
+		//He's NORTH
+		inNeighborhood = 2;
+	}
+	else if(closestEnemy == currentTileIndex - m_matchInfo.mapWidth)
+	{
+		//He's SOUTH
+		inNeighborhood = 3;
+	}
+
+	return inNeighborhood;
 }

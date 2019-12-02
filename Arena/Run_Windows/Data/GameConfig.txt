@@ -16,10 +16,7 @@ autoRestart=false
 
 forceMapSeed="0"
 forceMapSize="0"
-autoMap="Median"
-autoMatch="Free For All"
+autoMap="Default"
+autoMatch="Final"
 autoPlayers="*"
-
-nutrientPenaltyPerFault = 1000
-agentsKilledPerFault = 1
 

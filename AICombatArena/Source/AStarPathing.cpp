@@ -2,7 +2,7 @@
 #include "MathUtils.hpp"
 #include "ErrorWarningAssert.hpp"
 
-Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<int>& tileCosts)
+Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<int>& tileCosts, int limit)
 {
 	// m_pathInfo lives on Pather. It is the current std::vector<PathInfo>
 
@@ -12,7 +12,7 @@ Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 
 	CalculateCostsForTileIndex(startTileIndex, endTileIndex, mapDimensions, tileCosts, true);
 
 	// Begin the AStar!
-	while (m_openTileIndexList.size() > 0 && m_openTileIndexList.size() < 100)
+	while (m_openTileIndexList.size() > 0 && m_openTileIndexList.size() < limit)
 	{
 		int currentIndex = SelectFromAndUpdateOpenIndexList();
 		m_pathInfo[currentIndex].pathState = PATH_STATE_FINISHED;
@@ -39,19 +39,10 @@ Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 
 					m_openTileIndexList.push_back(neighbors[i]);
 				}
 			}
-			/*
-			//When the path cost is too high return an empty path
-			else
-			{
-				//The cost is too high to path
-				Path path;
-				return path;
-			}
-			*/
 		}
 	}
 
-	DebuggerPrintf("\n %d", m_openTileIndexList.size());
+	//DebuggerPrintf("\n %d", m_openTileIndexList.size());
 	if (m_openTileIndexList.size() > m_largestOpenList)
 	{
 		m_largestOpenList = m_openTileIndexList.size();
