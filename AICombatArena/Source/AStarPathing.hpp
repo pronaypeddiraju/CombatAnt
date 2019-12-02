@@ -32,7 +32,10 @@ public:
 	int				PopulateBoundedNeighbors(const int currentTileIdex, const IntVec2& tileDimensions, int* outNeighbors);
 
 	IntVec2			GetTileCoordinatesFromIndex(const short tileIndex, const IntVec2 mapDims);
+	
+	int		m_largestOpenList = 0;
 private:
 	std::vector<int> m_openTileIndexList;
 	PathInfo m_pathInfo;
+
 };

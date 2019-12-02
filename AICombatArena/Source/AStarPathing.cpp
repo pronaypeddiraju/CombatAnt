@@ -1,5 +1,6 @@
 #include "AStarPathing.hpp"
 #include "MathUtils.hpp"
+#include "ErrorWarningAssert.hpp"
 
 Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 mapDimensions, const std::vector<int>& tileCosts)
 {
@@ -11,7 +12,7 @@ Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 
 	CalculateCostsForTileIndex(startTileIndex, endTileIndex, mapDimensions, tileCosts, true);
 
 	// Begin the AStar!
-	while (m_openTileIndexList.size() > 0)
+	while (m_openTileIndexList.size() > 0 && m_openTileIndexList.size() < 100)
 	{
 		int currentIndex = SelectFromAndUpdateOpenIndexList();
 		m_pathInfo[currentIndex].pathState = PATH_STATE_FINISHED;
@@ -50,7 +51,11 @@ Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 
 		}
 	}
 
-
+	DebuggerPrintf("\n %d", m_openTileIndexList.size());
+	if (m_openTileIndexList.size() > m_largestOpenList)
+	{
+		m_largestOpenList = m_openTileIndexList.size();
+	}
 
 	// Work backwards from our Termination Point to the Starting Point;
 	Path path;

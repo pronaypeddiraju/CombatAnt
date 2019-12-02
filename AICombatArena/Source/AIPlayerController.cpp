@@ -3,6 +3,7 @@
 #include "AICommons.hpp"
 #include "MathUtils.hpp"
 #include <math.h>
+#include "ErrorWarningAssert.hpp"
 
 AIPlayerController* g_thePlayer = nullptr;
 extern volatile std::atomic<bool> gCanShutDown;
@@ -70,6 +71,8 @@ void AIPlayerController::Shutdown(const MatchResults& results)
 {
 	m_running = false;
 	m_turnCV.notify_all();
+
+	DebuggerPrintf("\n Largest Open List: %d", m_pather.m_largestOpenList);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -587,6 +590,8 @@ void AIPlayerController::PathToClosestFood(AgentReport& currentAgent)
 
 	if (destX != 9999)
 	{
+		m_currentTurnInfo.tilesThatHaveFood[closestIndex] = false;
+
 		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
 		eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
 		AddOrder(currentAgent.agentID, order);
