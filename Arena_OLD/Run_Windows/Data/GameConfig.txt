@@ -14,12 +14,12 @@ allowRemoteDebug=true
 allowMoodText=true
 autoRestart=false
 
+showEmotes=true
+showEffects=true
+
 forceMapSeed="0"
 forceMapSize="0"
-autoMap="Median"
-autoMatch="Free For All"
+autoMap="Final"
+autoMatch="Final"
 autoPlayers="*"
-
-nutrientPenaltyPerFault = 1000
-agentsKilledPerFault = 1
 

@@ -12,7 +12,8 @@ Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 
 	CalculateCostsForTileIndex(startTileIndex, endTileIndex, mapDimensions, tileCosts, true);
 
 	// Begin the AStar!
-	while (m_openTileIndexList.size() > 0 && m_openTileIndexList.size() < limit)
+	int iterations = 0;
+	while (m_openTileIndexList.size() > 0 && iterations < limit)
 	{
 		int currentIndex = SelectFromAndUpdateOpenIndexList();
 		m_pathInfo[currentIndex].pathState = PATH_STATE_FINISHED;
@@ -40,6 +41,8 @@ Path AStarPather::CreatePathAStar(int startTileIndex, int endTileIndex, IntVec2 
 				}
 			}
 		}
+
+		iterations++;
 	}
 
 	//DebuggerPrintf("\n %d", m_openTileIndexList.size());

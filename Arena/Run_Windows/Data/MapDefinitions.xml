@@ -15,6 +15,20 @@
 		<TileInfo type="water"  strandsPer100Tiles="0.5" strandLength="5" />
 	</MapDefinition>
 
+   <MapDefinition name="Final"
+		defaultSize="100"
+		fillTile="air"
+		edgeTile="stone"
+		tunnelTile="air"
+		foodStrandsPer100Tiles="25"
+		foodStrandLength="1"
+		foodSpawnedPerTurnPer100Tiles="0.01">
+
+      <TileInfo type="dirt"   strandsPer100Tiles="1.5" strandLength="15" />
+      <TileInfo type="stone"  strandsPer100Tiles="2.5" strandLength="4~8" />
+      <TileInfo type="water"  strandsPer100Tiles="0.5" strandLength="3~6" />
+   </MapDefinition>
+
 	<MapDefinition name="Fertile Fields"
 		defaultSize="96"
 		fillTile="air"
@@ -71,7 +85,7 @@
 		<TileInfo type="stone"  strandsPer100Tiles="1~4" strandLength="2~4" />
 	</MapDefinition>
 
-	<MapDefinition name="Benchy Bane"
+	<MapDefinition name="Coin Flip"
 		defaultSize="100"
 		fillTile="stone"
 		edgeTile="stone"

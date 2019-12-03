@@ -14,9 +14,13 @@ allowRemoteDebug=true
 allowMoodText=true
 autoRestart=false
 
+enableDebugDraw=true
+showEmotes=true
+showEffects=true
+
 forceMapSeed="0"
 forceMapSize="0"
-autoMap="Default"
+autoMap="Final"
 autoMatch="Final"
 autoPlayers="*"
 

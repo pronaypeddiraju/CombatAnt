@@ -856,11 +856,11 @@ void AIPlayerController::PathToClosestEnemy(AgentReport& currentAgent)
 
 		if (currentAgent.type == AGENT_TYPE_SOLDIER)
 		{
-			path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapSoldiers, m_matchInfo.mapWidth * 2);
+			path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapSoldiers, 10);
 		}
 		else if (currentAgent.type == AGENT_TYPE_WORKER)
 		{
-			path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers, m_matchInfo.mapWidth * 2);
+			path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers, 10);
 		}
 		
 		if (path.size() != 0)
