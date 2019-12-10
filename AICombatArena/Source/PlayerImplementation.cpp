@@ -53,7 +53,6 @@ void PostGameShutdown(const MatchResults& results)
 //------------------------------------------------------------------------------------------------------------------------------
 void PlayerThreadEntry(int yourThreadIdx)
 {
-	TODO("Make this threaded and use a job system with behavior trees");
 	AIPlayerController* player = AIPlayerController::GetInstance();
 
 	player->m_workerCostMapInitialized = false;
@@ -64,13 +63,7 @@ void PlayerThreadEntry(int yourThreadIdx)
 
 	if (yourThreadIdx == 0)
 	{
-		//Keep this to be the main thread
-		//player->MainThreadEntry(yourThreadIdx);
 		player->WorkerThreadEntry(yourThreadIdx);
-	}
-	else
-	{
-		//player->WorkerThreadEntry(yourThreadIdx);
 	}
 }
 

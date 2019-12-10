@@ -90,8 +90,8 @@
 		fillTile="stone"
 		edgeTile="stone"
 		tunnelTile="water"
-		foodStrandsPer100Tiles="20~30"
-		foodStrandLength="1"
+		foodStrandsPer100Tiles="40~50"
+		foodStrandLength="1~4"
 		foodSpawnedPerTurnPer100Tiles="0.005">
 
 		<TileInfo type="dirt"   strandsPer100Tiles="4~8" strandLength="4~16" />
@@ -112,4 +112,14 @@
 		<TileInfo type="water"  strandsPer100Tiles="0" strandLength="0" />
 		<TileInfo type="stone"  strandsPer100Tiles="0" strandLength="0" />
 	</MapDefinition>
+
+   <MapDefinition name="Estonia"
+      defaultSize="64"
+      fillTile="air"
+      edgeTile="stone">
+      
+      <TileInfo type="dirt"   strandsPer100Tiles="0.0" strandLength="0" />
+      <TileInfo type="stone"  strandsPer100Tiles="0~2" strandLength="5~10" />
+      <TileInfo type="water"  strandsPer100Tiles="0.0" strandLength="0" />
+   </MapDefinition>
 </MapDefinitions>

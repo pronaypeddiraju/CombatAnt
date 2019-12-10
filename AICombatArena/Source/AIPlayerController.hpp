@@ -1,6 +1,7 @@
 #pragma once
 #include "ArenaPlayerInterface.hpp"
 #include "AStarPathing.hpp"
+#include "Agent.hpp"
 #include <mutex>
 #include <atomic>
 
@@ -35,35 +36,44 @@ public:
 
 	void				SetMapCostBasedOnAntVision(eAgentType agentType, std::vector<int>& costMap);
 
-private:
-	void				ProcessTurn(ArenaTurnStateForPlayer& turnState);
+	void				SetVisionHeatMapForFood(std::vector<bool>& visionMap);
+	void				AddOrder(AgentID agent, eOrderCode order);
+	void				ReturnClosestAmong(Agent& currentAgent, short &returnX, short &returnY, short tile1X, short tile1Y, short tile2X, short tile2Y);
+	bool				CheckTileSafetyForMove(Agent& currentAgent, eOrderCode order);
+	eOrderCode			GetMoveOrderToTile(Agent& currentAgent, short destPosX, short destPosY);
 
 	short				GetTileIndex(short x, short y) const;
 	void				GetTileXYFromIndex(const short tileIndex, short &x, short&y);
 	IntVec2				GetTileCoordinatesFromIndex(const short tileIndex);
 
+private:
+	void				ProcessTurn(ArenaTurnStateForPlayer& turnState);
+
+
+	void				UpdateAllAgentsFromTurnState(ArenaTurnStateForPlayer& turnState);
+	void				CreateAgentFromReport(const AgentReport& agentReport);
+	void				CheckAndAddAgentsToList(const AgentReport& agentReports);
+	void				RemoveAnyDeadAgentsFromList();
+
 	// Helpers
-	void				MoveRandom(AgentReport& currentAgent, int recursiveCount = 0);
-	void				AddOrder(AgentID agent, eOrderCode order);
-	void				ReturnClosestAmong(AgentReport& currentAgent, short &returnX, short &returnY, short tile1X, short tile1Y, short tile2X, short tile2Y);
-	bool				CheckTileSafetyForMove(AgentReport& currentAgent, eOrderCode order);
+	void				MoveRandom(Agent& currentAgent, int recursiveCount = 0);
+	
 
-	void				MoveToQueen(AgentReport& currentAgent, int recursiveCount = 0);
-	void				MoveToClosestFood(AgentReport& currentAgent, int recursiveCount = 0);
-	void				PathToClosestFood(AgentReport& currentAgent);
-	void				PathToClosestEnemy(AgentReport& currentAgent);
-	void				PathToFarthestVisible(AgentReport& currentAgent);
-	void				PathToQueen(AgentReport& currentAgent);
-	void				PathToClosestDirt(AgentReport& currentAgent);
+	void				MoveToQueen(Agent& currentAgent, int recursiveCount = 0);
+	void				MoveToClosestFood(Agent& currentAgent, int recursiveCount = 0);
+	void				PathToClosestFood(Agent& currentAgent);
+	void				PathToClosestEnemy(Agent& currentAgent);
+	void				PathToFarthestVisible(Agent& currentAgent);
+	void				PathToQueen(Agent& currentAgent, bool shouldResetPath = false);
+	void				PathToClosestDirt(Agent& currentAgent);
 
-	IntVec2				GetFarthestObservedTile(const AgentReport& currentAgent);
-	IntVec2				GetFarthestUnObservedTile(const AgentReport& currentAgent);
+	IntVec2				GetFarthestObservedTile(const Agent& currentAgent);
+	IntVec2				GetFarthestUnObservedTile(const Agent& currentAgent);
 
 	AgentReport*		FindFirstAgentOfType(eAgentType type);
-	int					FindClosestEnemy(AgentReport& currentAgent);
-	IntVec2				FindClosestTile(AgentReport& currentAgent, eTileType tileType);
-	eOrderCode			GetMoveOrderToTile(AgentReport& currentAgent, short destPosX, short destPosY);
-	eTileNeighborhood	IsPositionInNeighborhood(AgentReport& currentAgent, IntVec2 position);
+	int					FindClosestEnemy(Agent& currentAgent);
+	IntVec2				FindClosestTile(Agent& currentAgent, eTileType tileType);
+	eTileNeighborhood	IsPositionInNeighborhood(Agent& currentAgent, IntVec2 position);
 
 	//Pathing
 	int					GetTileCostForAgentType(eAgentType agentType, eTileType tileType);
@@ -73,10 +83,11 @@ private:
 	bool				IsTileSafeForSoldier(eTileType tileType);
 	bool				IsTileSafeForWorker(eTileType tileType);
 
-	bool				IsThisAgentQueen(AgentReport& report);
-	int					GetClosestQueenTileIndex(AgentReport& report);
-	int					IsEnemyInNeighborhood(int closestEnemy, AgentReport& report);
+	bool				IsThisAgentQueen(Agent& report);
+	int					GetClosestQueenTileIndex(Agent& report);
+	int					IsEnemyInNeighborhood(int closestEnemy, Agent& report);
 
+	bool				IsObservedAgentInAssignedTargets(ObservedAgent observedAgents);
 private:
 	MatchInfo m_matchInfo;
 	DebugInterface* m_debugInterface;
@@ -93,24 +104,25 @@ private:
 	std::vector<AgentReport> m_queenReports;
 	AgentReport m_mainQueen;
 
-	//Pather m_pather;
-	//Pather m_scoutPather;
-	//Pather m_soldierPather;
-	//Pather m_workerPather;
 	AStarPather m_pather;
+
+	std::vector<Agent>	m_agentList;
+	std::vector<ObservedAgent> m_assignedTargets;
+	int lastAgent = 6;
 
 public:
 
-	std::atomic<bool>	m_workerCostMapInitialized = false;
-	std::atomic<bool>	m_soldierCostMapInitialized = false;
-	std::atomic<bool>	m_scoutCostMapInitialized = false;
+	bool	m_workerCostMapInitialized = false;
+	bool	m_soldierCostMapInitialized = false;
+	bool	m_scoutCostMapInitialized = false;
 
-	std::atomic<int>	m_agentIterator = 0;
+	int		m_agentIterator = 0;
 
 	std::vector<int>	m_costMapWorkers;
 	std::vector<int>	m_costMapSoldiers;
 	std::vector<int>	m_costMapScouts;
 
+	std::vector<bool>	m_foodVisionHeatMap;
 
 	int			m_numWorkers = 0;
 	int			m_numSoldiers = 0;

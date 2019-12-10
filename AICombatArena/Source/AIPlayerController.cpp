@@ -103,29 +103,11 @@ void AIPlayerController::WorkerThreadEntry(int threadIdx)
 			turnState = m_currentTurnInfo;
 			lk.unlock();
 
-			/*
-			if (!m_workerCostMapInitialized)
-			{
-				m_workerCostMapInitialized = true;
-				//SetMapCostBasedOnAntVision(AGENT_TYPE_WORKER, m_costMapWorkers);
-			}
-
-			if (!m_scoutCostMapInitialized)
-			{
-				m_scoutCostMapInitialized = true;
-				//SetMapCostBasedOnAntVision(AGENT_TYPE_SCOUT, m_costMapScouts);
-			}
-
-			if (!m_soldierCostMapInitialized)
-			{
-				m_soldierCostMapInitialized = true;
-				//SetMapCostBasedOnAntVision(AGENT_TYPE_SOLDIER, m_costMapSoldiers);
-			}
-			*/
-
 			SetMapCostBasedOnAntVision(AGENT_TYPE_WORKER, m_costMapWorkers);
 			SetMapCostBasedOnAntVision(AGENT_TYPE_SCOUT, m_costMapScouts);
 			SetMapCostBasedOnAntVision(AGENT_TYPE_SOLDIER, m_costMapSoldiers);
+
+			SetVisionHeatMapForFood(m_foodVisionHeatMap);
 
 			// process a turn and then mark that the turn is ready; 
 			ProcessTurn(turnState);
@@ -179,6 +161,13 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 	// for each ant I know about, give him something to do
 	int agentCount = turnState.numReports;
 
+	// Make sure we have an updated list of all the agents
+	UpdateAllAgentsFromTurnState(turnState);
+
+	RemoveAnyDeadAgentsFromList();
+
+	m_assignedTargets.clear();
+
 	//Find the queen's location
 	m_queenReports[0] = *FindFirstAgentOfType(AGENT_TYPE_QUEEN);
 
@@ -188,13 +177,9 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 	
 	if (m_matchInfo.numTurnsBeforeSuddenDeath > turnState.turnNumber)
 	{
-		//while(m_agentIterator < agentCount)
-		for (int i = 0; i < agentCount; ++i)
+		for (int i = 0; i < m_agentList.size(); ++i)
 		{
-			//If using while loop with atomic agent count iterator
-			//AgentReport& report = turnState.agentReports[m_agentIterator];
-
-			AgentReport& report = turnState.agentReports[i];
+			Agent& report = m_agentList[i];
 			if ((report.state != STATE_DEAD) && (report.exhaustion == 0))
 			{
 				// agent is alive and ready to get an order, so do something
@@ -202,8 +187,8 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 				{
 					// scout will drunkely walk
 				case AGENT_TYPE_SCOUT:
-					//MoveRandom(report);
-					PathToFarthestVisible(report);
+					MoveRandom(report);
+					//PathToFarthestVisible(report);
 					break;
 
 					// moves randomly, but if they fall on food, will pick it up if hands are free
@@ -218,7 +203,9 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 						{
 							if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
 							{
-								MoveRandom(report);
+								//MoveRandom(report);
+								report.m_currentPath.clear();
+								PathToQueen(report);
 							}
 							else
 							{
@@ -246,6 +233,7 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 					if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
 					{
 						MoveRandom(report);
+						report.m_currentPath.clear();
 					}
 					else
 					{
@@ -301,51 +289,17 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 						AddOrder(report.agentID, order);
 						m_numWorkers++;
 					}
-					else
-					{
-						/*
-						if (report.agentID != m_mainQueen.agentID)
-						{
-							MoveRandom(report);
-						}
-						*/
-					}
 				}
 				break;
 				}
 			}
-			else if (report.state == STATE_DEAD)
-			{
-				switch (report.type)
-				{
-				case AGENT_TYPE_SOLDIER:
-					m_numSoldiers--;
-					break;
-				case AGENT_TYPE_WORKER:
-					m_numWorkers--;
-					break;
-				case AGENT_TYPE_SCOUT:
-					m_numScouts--;
-					break;
-				case AGENT_TYPE_QUEEN:
-					m_numQueens--;
-					break;
-				}
-			}
-			//When using while loop instead of for, uncomment this
-			//++m_agentIterator;
-
 		}
 	}
 	else
 	{
-		//while(m_agentIterator < agentCount)
-		for (int i = 0; i < agentCount; ++i)
+		for (int i = 0; i < m_agentList.size(); ++i)
 		{
-			//If using while loop with atomic agent count iterator
-			//AgentReport& report = turnState.agentReports[m_agentIterator];
-
-			AgentReport& report = turnState.agentReports[i];
+			Agent& report = m_agentList[i];
 			if (report.state != STATE_DEAD)
 			{
 				switch (report.type)
@@ -364,9 +318,7 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 				}
 				case AGENT_TYPE_SCOUT:
 				{
-					eOrderCode order = (eOrderCode)(ORDER_SUICIDE);
-					AddOrder(report.agentID, order);
-					m_numScouts--;
+					MoveRandom(report);
 					/*
 					if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
 					{
@@ -392,7 +344,9 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 						{
 							if (report.result == AGENT_ORDER_ERROR_MOVE_BLOCKED_BY_TILE)
 							{
-								MoveRandom(report);
+								//MoveRandom(report);
+								report.m_currentPath.clear();
+								PathToQueen(report);
 							}
 							else
 							{
@@ -402,11 +356,6 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 					}
 					else
 					{
-						eOrderCode order = (eOrderCode)(ORDER_SUICIDE);
-						AddOrder(report.agentID, order);
-						m_numWorkers--;
-
-						/*
 						int tileIdx = GetTileIndex(report.tileX, report.tileY);
 						bool tileHasFood = m_currentTurnInfo.tilesThatHaveFood[tileIdx];
 						if (tileHasFood)
@@ -417,8 +366,8 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 						{
 							PathToClosestFood(report);
 						}
-						*/
 					}
+					break;
 					
 					/*
 					if (report.state == STATE_HOLDING_DIRT)
@@ -525,24 +474,6 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 				}
 				}
 			}
-			else if (report.state == STATE_DEAD)
-			{
-				switch (report.type)
-				{
-				case AGENT_TYPE_SOLDIER:
-					m_numSoldiers--;
-					break;
-				case AGENT_TYPE_WORKER:
-					m_numWorkers--;
-					break;
-				case AGENT_TYPE_SCOUT:
-					m_numScouts--;
-					break;
-				case AGENT_TYPE_QUEEN:
-					m_numQueens--;
-					break;
-				}
-			}
 		}
 	}
 	
@@ -571,7 +502,7 @@ IntVec2 AIPlayerController::GetTileCoordinatesFromIndex(const short tileIndex)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::MoveRandom(AgentReport& currentAgent, int recursiveCount)
+void AIPlayerController::MoveRandom(Agent& currentAgent, int recursiveCount)
 {
 	int offset = rand() % 4;
 
@@ -615,7 +546,7 @@ void AIPlayerController::AddOrder(AgentID agent, eOrderCode order)
 	m_turnOrders.numberOfOrders++;
 }
 
-void AIPlayerController::ReturnClosestAmong(AgentReport& currentAgent, short &returnX, short &returnY, short tile1X, short tile1Y, short tile2X, short tile2Y)
+void AIPlayerController::ReturnClosestAmong(Agent& currentAgent, short &returnX, short &returnY, short tile1X, short tile1Y, short tile2X, short tile2Y)
 {
 	//Find the closest manhattan distance among the 2 tiles
 	short distanceXTile1 = abs(currentAgent.tileX - tile1X);
@@ -641,7 +572,7 @@ void AIPlayerController::ReturnClosestAmong(AgentReport& currentAgent, short &re
 	return;
 }
 
-bool AIPlayerController::CheckTileSafetyForMove(AgentReport& currentAgent, eOrderCode order)
+bool AIPlayerController::CheckTileSafetyForMove(Agent& currentAgent, eOrderCode order)
 {
 	int index;
 
@@ -700,7 +631,7 @@ bool AIPlayerController::CheckTileSafetyForMove(AgentReport& currentAgent, eOrde
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::MoveToQueen(AgentReport& currentAgent, int recursiveCount)
+void AIPlayerController::MoveToQueen(Agent& currentAgent, int recursiveCount)
 {
 	//Path towards that general direction
 	int tileIndex = GetClosestQueenTileIndex(currentAgent);
@@ -727,7 +658,7 @@ void AIPlayerController::MoveToQueen(AgentReport& currentAgent, int recursiveCou
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::MoveToClosestFood(AgentReport& currentAgent, int recursiveCount)
+void AIPlayerController::MoveToClosestFood(Agent& currentAgent, int recursiveCount)
 {
 	short destX = 100;
 	short destY = 100;
@@ -788,16 +719,21 @@ void AIPlayerController::MoveToClosestFood(AgentReport& currentAgent, int recurs
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::PathToClosestFood(AgentReport& currentAgent)
+void AIPlayerController::PathToClosestFood(Agent& currentAgent)
 {
+	bool result = currentAgent.ContinuePathIfValid();
+
+	if (result)
+		return;
+
 	short destX = 9999;
 	short destY = 9999;
 	int closestIndex = 0;
 
 	//Look for visible food
-	for (int hasFoodTileIndex = 0; hasFoodTileIndex < MAX_ARENA_TILES; hasFoodTileIndex++)
+	for (int hasFoodTileIndex = 0; hasFoodTileIndex < m_matchInfo.mapWidth * m_matchInfo.mapWidth; hasFoodTileIndex++)
 	{
-		if (m_currentTurnInfo.tilesThatHaveFood[hasFoodTileIndex])
+		if (m_foodVisionHeatMap[hasFoodTileIndex])
 		{
 			short foodFoundX = 0;
 			short foodFoundY = 0;
@@ -825,12 +761,14 @@ void AIPlayerController::PathToClosestFood(AgentReport& currentAgent)
 	int startIndex = GetTileIndex(currentAgent.tileX, currentAgent.tileY);
 	int endIndex = GetTileIndex(destX, destY);
 
-	if (destX != 9999)
+	if (destX != 9999 && endIndex >= 0)
 	{
-		//m_currentTurnInfo.tilesThatHaveFood[endIndex] = false;
+		m_foodVisionHeatMap[endIndex] = false;
 
-		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
-		eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
+		currentAgent.m_currentPath = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
+
+		eOrderCode order = GetMoveOrderToTile(currentAgent, currentAgent.m_currentPath.back().x, currentAgent.m_currentPath.back().y);
+		currentAgent.m_currentPath.pop_back();
 		AddOrder(currentAgent.agentID, order);
 	}
 	else
@@ -840,32 +778,37 @@ void AIPlayerController::PathToClosestFood(AgentReport& currentAgent)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::PathToClosestEnemy(AgentReport& currentAgent)
+void AIPlayerController::PathToClosestEnemy(Agent& currentAgent)
 {
+	bool result = currentAgent.ContinuePathIfValid();
+
+	if (result)
+		return;
+
 	int observedAgentID = FindClosestEnemy(currentAgent);
 
 	if (observedAgentID != -1)
 	{
 		ObservedAgent target = m_currentTurnInfo.observedAgents[observedAgentID];
 
-		Path path;
-		path.clear();
+		m_assignedTargets.push_back(target);
 
 		int startIndex = GetTileIndex(currentAgent.tileX, currentAgent.tileY);
 		int endIndex = GetTileIndex(target.tileX, target.tileY);
 
 		if (currentAgent.type == AGENT_TYPE_SOLDIER)
 		{
-			path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapSoldiers, 10);
+			currentAgent.m_currentPath = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapSoldiers, 128);
 		}
 		else if (currentAgent.type == AGENT_TYPE_WORKER)
 		{
-			path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers, 10);
+			currentAgent.m_currentPath = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers, 128);
 		}
 		
-		if (path.size() != 0)
+		if (currentAgent.m_currentPath.size() != 0)
 		{
-			eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
+			eOrderCode order = GetMoveOrderToTile(currentAgent, currentAgent.m_currentPath.back().x, currentAgent.m_currentPath.back().y);
+			currentAgent.m_currentPath.pop_back();
 
 			AddOrder(currentAgent.agentID, order);
 		}
@@ -881,7 +824,7 @@ void AIPlayerController::PathToClosestEnemy(AgentReport& currentAgent)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::PathToFarthestVisible(AgentReport& currentAgent)
+void AIPlayerController::PathToFarthestVisible(Agent& currentAgent)
 {
 	//Find the farthest observable tile
 	IntVec2 farthestTile = GetFarthestObservedTile(currentAgent);
@@ -906,11 +849,21 @@ void AIPlayerController::PathToFarthestVisible(AgentReport& currentAgent)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::PathToQueen(AgentReport& currentAgent)
+void AIPlayerController::PathToQueen(Agent& currentAgent, bool shouldResetPath)
 {
-	//Now path to the closest food
-	Path path;
-	path.clear();
+	bool result = currentAgent.ContinuePathIfValid();
+
+	if (shouldResetPath)
+	{
+		if (currentAgent.m_currentPath.size() > 0)
+		{
+			currentAgent.m_currentPath.clear();
+			result = false;
+		}
+	}
+
+	if (result)
+		return;
 
 	int startIndex = GetTileIndex(currentAgent.tileX, currentAgent.tileY);
 	int endIndex = GetClosestQueenTileIndex(currentAgent);
@@ -918,16 +871,17 @@ void AIPlayerController::PathToQueen(AgentReport& currentAgent)
 
 	if (currentAgent.type == AGENT_TYPE_WORKER)
 	{
-		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
+		currentAgent.m_currentPath = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
 	}
 	else if (currentAgent.type == AGENT_TYPE_SOLDIER)
 	{
-		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapSoldiers);
+		currentAgent.m_currentPath = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapSoldiers);
 	}
 
-	if (path.size() != 0)
+	if (currentAgent.m_currentPath.size() != 0)
 	{
-		eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
+		eOrderCode order = GetMoveOrderToTile(currentAgent, currentAgent.m_currentPath.back().x, currentAgent.m_currentPath.back().y);
+		currentAgent.m_currentPath.pop_back();
 		AddOrder(currentAgent.agentID, order);
 	}
 	else
@@ -937,7 +891,7 @@ void AIPlayerController::PathToQueen(AgentReport& currentAgent)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-void AIPlayerController::PathToClosestDirt(AgentReport& currentAgent)
+void AIPlayerController::PathToClosestDirt(Agent& currentAgent)
 {
 	short destX = 9999;
 	short destY = 9999;
@@ -976,8 +930,9 @@ void AIPlayerController::PathToClosestDirt(AgentReport& currentAgent)
 
 	if (destX != 9999)
 	{
-		path = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
-		eOrderCode order = GetMoveOrderToTile(currentAgent, path.back().x, path.back().y);
+		currentAgent.m_currentPath = m_pather.CreatePathAStar(startIndex, endIndex, IntVec2(m_matchInfo.mapWidth, m_matchInfo.mapWidth), m_costMapWorkers);
+		eOrderCode order = GetMoveOrderToTile(currentAgent, currentAgent.m_currentPath.back().x, currentAgent.m_currentPath.back().y);
+		currentAgent.m_currentPath.pop_back();
 		AddOrder(currentAgent.agentID, order);
 	}
 	else
@@ -987,7 +942,7 @@ void AIPlayerController::PathToClosestDirt(AgentReport& currentAgent)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-IntVec2 AIPlayerController::GetFarthestObservedTile(const AgentReport& currentAgent)
+IntVec2 AIPlayerController::GetFarthestObservedTile(const Agent& currentAgent)
 {
 	int maxDistance = 0;
 	int farthestIndex = -1;
@@ -1008,7 +963,7 @@ IntVec2 AIPlayerController::GetFarthestObservedTile(const AgentReport& currentAg
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-IntVec2 AIPlayerController::GetFarthestUnObservedTile(const AgentReport& currentAgent)
+IntVec2 AIPlayerController::GetFarthestUnObservedTile(const Agent& currentAgent)
 {
 	int maxDistance = 0;
 	int farthestIndex = -1;
@@ -1051,13 +1006,16 @@ AgentReport* AIPlayerController::FindFirstAgentOfType(eAgentType type)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-int AIPlayerController::FindClosestEnemy(AgentReport& currentAgent)
+int AIPlayerController::FindClosestEnemy(Agent& currentAgent)
 {
 	int closestDistance = 999999;
 	int closestIndex = -1;
 
 	for (int observeIndex = 0; observeIndex < m_currentTurnInfo.numObservedAgents; observeIndex++)
 	{
+		if(IsObservedAgentInAssignedTargets(m_currentTurnInfo.observedAgents[observeIndex]))
+			continue;
+
 		//Find the closest among these guys
 		int distance = GetManhattanDistance(IntVec2(currentAgent.tileX, currentAgent.tileY), IntVec2(m_currentTurnInfo.observedAgents[observeIndex].tileX, m_currentTurnInfo.observedAgents[observeIndex].tileY));
 		if (distance < closestDistance)
@@ -1071,7 +1029,7 @@ int AIPlayerController::FindClosestEnemy(AgentReport& currentAgent)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-IntVec2 AIPlayerController::FindClosestTile(AgentReport& currentAgent, eTileType tileType)
+IntVec2 AIPlayerController::FindClosestTile(Agent& currentAgent, eTileType tileType)
 {
 	short destX = 9999;
 	short destY = 9999;
@@ -1105,7 +1063,7 @@ IntVec2 AIPlayerController::FindClosestTile(AgentReport& currentAgent, eTileType
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-eOrderCode AIPlayerController::GetMoveOrderToTile(AgentReport& currentAgent, short destPosX, short destPosY)
+eOrderCode AIPlayerController::GetMoveOrderToTile(Agent& currentAgent, short destPosX, short destPosY)
 {
 	//Return the ordercode for move based on currentAgent position relative to destPosX and destPosY
 
@@ -1137,7 +1095,7 @@ eOrderCode AIPlayerController::GetMoveOrderToTile(AgentReport& currentAgent, sho
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-eTileNeighborhood AIPlayerController::IsPositionInNeighborhood(AgentReport& currentAgent, IntVec2 position)
+eTileNeighborhood AIPlayerController::IsPositionInNeighborhood(Agent& currentAgent, IntVec2 position)
 {
 	if (currentAgent.tileX == position.x && currentAgent.tileY == position.y)
 	{
@@ -1179,6 +1137,29 @@ void AIPlayerController::SetMapCostBasedOnAntVision(eAgentType agentType, std::v
 	{
 		int cost = GetTileCostForAgentType(agentType, m_currentTurnInfo.observedTiles[observedTileIndex]);
 		costMap[observedTileIndex] = cost;
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::SetVisionHeatMapForFood(std::vector<bool>& visionMap)
+{
+	//If any observed tile is food, mark it on the heatmap
+	int mapSize = m_matchInfo.mapWidth * m_matchInfo.mapWidth;
+	if (visionMap.size() != mapSize)
+	{
+		visionMap.resize(mapSize);
+	}
+
+	for (int observedTileIndex = 0; observedTileIndex < mapSize; observedTileIndex++)
+	{
+		if (m_currentTurnInfo.tilesThatHaveFood[observedTileIndex] == true)
+		{
+			visionMap[observedTileIndex] = true;
+		}
+		else if (m_currentTurnInfo.observedTiles[observedTileIndex] != TILE_TYPE_UNSEEN)
+		{
+			visionMap[observedTileIndex] = false;
+		}
 	}
 }
 
@@ -1354,7 +1335,7 @@ bool AIPlayerController::IsTileSafeForWorker(eTileType tileType)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-bool AIPlayerController::IsThisAgentQueen(AgentReport& report)
+bool AIPlayerController::IsThisAgentQueen(Agent& report)
 {
 	for (int i = 0; i < m_queenReports.size(); i++)
 	{
@@ -1369,7 +1350,7 @@ bool AIPlayerController::IsThisAgentQueen(AgentReport& report)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-int AIPlayerController::GetClosestQueenTileIndex(AgentReport& agentReport)
+int AIPlayerController::GetClosestQueenTileIndex(Agent& agentReport)
 {
 	int closestDistance = 99999;
 	int closestIndex = 0;
@@ -1391,7 +1372,7 @@ int AIPlayerController::GetClosestQueenTileIndex(AgentReport& agentReport)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-int AIPlayerController::IsEnemyInNeighborhood(int closestEnemy, AgentReport& report)
+int AIPlayerController::IsEnemyInNeighborhood(int closestEnemy, Agent& report)
 {
 	int currentTileIndex = GetTileIndex(report.tileX, report.tileY);
 
@@ -1418,4 +1399,140 @@ int AIPlayerController::IsEnemyInNeighborhood(int closestEnemy, AgentReport& rep
 	}
 
 	return inNeighborhood;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+bool AIPlayerController::IsObservedAgentInAssignedTargets(ObservedAgent observedAgents)
+{
+	std::vector<ObservedAgent>::iterator itr = m_assignedTargets.begin();
+
+	while (itr != m_assignedTargets.end())
+	{
+		if (observedAgents.agentID == itr->agentID)
+		{
+			return true;
+		}
+
+		itr++;
+	}
+
+	return false;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::RemoveAnyDeadAgentsFromList()
+{
+	//Check if there are any dead agents in the list and get rid of them
+	for (int i = 0; i < m_agentList.size(); i++)
+	{
+		if (m_agentList[i].state == STATE_DEAD)
+		{
+			switch (m_agentList[i].type)
+			{
+			case AGENT_TYPE_WORKER:
+				m_numWorkers--;
+				break;
+			case AGENT_TYPE_QUEEN:
+				m_numQueens--;
+				break;
+			case AGENT_TYPE_SCOUT:
+				m_numScouts--;
+				break;
+			case AGENT_TYPE_SOLDIER:
+				m_numSoldiers--;
+				break;
+			}
+
+			m_agentList.erase(m_agentList.begin() + i);
+			i--;
+		}
+	}
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::CheckAndAddAgentsToList(const AgentReport& agentReport)
+{
+	//Check if the agent is in list, if not create new agent and add to the list
+	std::vector<Agent>::iterator agentIter = m_agentList.begin();
+
+	while (agentIter != m_agentList.end())
+	{
+		if (agentIter->agentID == agentReport.agentID)
+		{
+			//Agent is in the list
+
+			if (agentIter->state == STATE_DEAD) 
+			{
+				switch (agentIter->type)
+				{
+				case AGENT_TYPE_SOLDIER:
+					m_numSoldiers--;
+					break;
+				case AGENT_TYPE_SCOUT:
+					m_numScouts--;
+					break;
+				case AGENT_TYPE_QUEEN:
+					m_numQueens--;
+					break;
+				case AGENT_TYPE_WORKER:
+					m_numWorkers--;
+					break;
+				}
+
+				m_agentList.erase(agentIter);
+				return;
+			}
+			else
+			{
+				agentIter->UpdateAgentData(agentReport);
+				return;
+			}
+		}
+		agentIter++;
+	}
+
+	CreateAgentFromReport(agentReport);
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::UpdateAllAgentsFromTurnState(ArenaTurnStateForPlayer& turnState)
+{
+	m_numWorkers = 0;
+	m_numScouts = 0;
+	m_numQueens = 0;
+	m_numSoldiers = 0;
+
+	int numAgents = turnState.numReports;
+
+	for (int agentIter = 0; agentIter < numAgents; agentIter++)
+	{
+		CheckAndAddAgentsToList(turnState.agentReports[agentIter]);
+
+		switch (turnState.agentReports[agentIter].type)
+		{
+		case AGENT_TYPE_SOLDIER:
+			m_numSoldiers++;
+			break;
+		case AGENT_TYPE_SCOUT:
+			m_numScouts++;
+			break;
+		case AGENT_TYPE_QUEEN:
+			m_numQueens++;
+			break;
+		case AGENT_TYPE_WORKER:
+			m_numWorkers++;
+			break;
+		}
+	}
+
+	int numInList = m_agentList.size();
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+void AIPlayerController::CreateAgentFromReport(const AgentReport& agentReport)
+{
+	//Make a new agent and add it to the report
+	Agent agent = Agent(agentReport);
+	m_agentList.push_back(agent);
 }

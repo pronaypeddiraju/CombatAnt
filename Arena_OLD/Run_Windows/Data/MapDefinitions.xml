@@ -85,13 +85,13 @@
 		<TileInfo type="stone"  strandsPer100Tiles="1~4" strandLength="2~4" />
 	</MapDefinition>
 
-	<MapDefinition name="Benchy Bane"
+	<MapDefinition name="Coin Flip"
 		defaultSize="100"
 		fillTile="stone"
 		edgeTile="stone"
 		tunnelTile="water"
-		foodStrandsPer100Tiles="20~30"
-		foodStrandLength="1"
+		foodStrandsPer100Tiles="40~50"
+		foodStrandLength="1~4"
 		foodSpawnedPerTurnPer100Tiles="0.005">
 
 		<TileInfo type="dirt"   strandsPer100Tiles="4~8" strandLength="4~16" />
