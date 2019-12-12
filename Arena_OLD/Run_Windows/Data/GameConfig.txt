@@ -12,7 +12,7 @@ agentDefinitionFile="./Data/AgentDefinitions.xml"
 allowRemotePause=true
 allowRemoteDebug=true
 allowMoodText=true
-autoRestart=false;
+autoRestart=true
 
 enableDebugDraw=true
 showEmotes=true
@@ -20,7 +20,7 @@ showEffects=true
 
 forceMapSeed="0"
 forceMapSize="0"
-autoMap="Final"
-autoMatch="Final"
 autoPlayers="*"
+autoMatch="Final"
+autoMap="Final"
 

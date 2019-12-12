@@ -518,7 +518,7 @@ void AIPlayerController::ProcessTurn(ArenaTurnStateForPlayer& turnState)
 	}
 	
 
-	DebugDrawVisibleFood();
+	//DebugDrawVisibleFood();
 
 
 }
@@ -907,11 +907,22 @@ void AIPlayerController::PathToFarthestVisible(Agent& currentAgent)
 {
 	bool result = currentAgent.ContinuePathIfValid();
 
-	if (result)
-		return;
-
 	//Find the farthest observable tile
 	IntVec2 farthestTile = GetFarthestObservedTile(currentAgent);
+
+	if (result && currentAgent.m_currentPath.size() > 0)
+	{
+		if (farthestTile == currentAgent.m_currentPath.front())
+		{
+			//We ended up getting the same place, so just pick a random spot to path
+			farthestTile.x = (rand() % (m_matchInfo.mapWidth));
+			farthestTile.y = (rand() % (m_matchInfo.mapWidth));
+		}
+		else
+		{
+			return;
+		}
+	}
 
 	int startIndex = GetTileIndex(currentAgent.tileX, currentAgent.tileY);
 	int endIndex = GetTileIndex(farthestTile.x, farthestTile.y);
