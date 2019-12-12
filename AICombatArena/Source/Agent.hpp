@@ -16,4 +16,5 @@ public:
 
 public:
 	Path		m_currentPath;
+	int			m_assignedTileIndex = -1;	//Assigned tile index
 };

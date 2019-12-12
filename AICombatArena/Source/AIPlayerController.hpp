@@ -4,6 +4,7 @@
 #include "Agent.hpp"
 #include <mutex>
 #include <atomic>
+#include <map>
 
 enum eTileNeighborhood
 {
@@ -46,10 +47,13 @@ public:
 	void				GetTileXYFromIndex(const short tileIndex, short &x, short&y);
 	IntVec2				GetTileCoordinatesFromIndex(const short tileIndex);
 
+	bool				IsAgentOnQueen(Agent& report);
+
 private:
 	void				ProcessTurn(ArenaTurnStateForPlayer& turnState);
 
 
+	void				DebugDrawVisibleFood();
 	void				UpdateAllAgentsFromTurnState(ArenaTurnStateForPlayer& turnState);
 	void				CreateAgentFromReport(const AgentReport& agentReport);
 	void				CheckAndAddAgentsToList(const AgentReport& agentReports);
@@ -102,13 +106,17 @@ private:
 	PlayerTurnOrders m_turnOrders;
 
 	std::vector<AgentReport> m_queenReports;
-	AgentReport m_mainQueen;
 
 	AStarPather m_pather;
 
 	std::vector<Agent>	m_agentList;
 	std::vector<ObservedAgent> m_assignedTargets;
 	int lastAgent = 6;
+
+	std::vector<int>	m_scoutDestinations;
+	bool	m_repathOnQueenMove = false;
+
+	int m_moveDelay = 100;
 
 public:
 
@@ -123,6 +131,8 @@ public:
 	std::vector<int>	m_costMapScouts;
 
 	std::vector<bool>	m_foodVisionHeatMap;
+
+	std::map<int, Agent*> m_scoutPositionMap;
 
 	int			m_numWorkers = 0;
 	int			m_numSoldiers = 0;

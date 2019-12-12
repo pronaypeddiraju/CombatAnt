@@ -25,9 +25,11 @@ class AIPlayerController;
 //Extern to existing singletons
 extern AIPlayerController* g_thePlayer;
 
-constexpr int MAX_WORKERS = 45;
-constexpr int MAX_SOLDIERS = 25;
-constexpr int MAX_SCOUTS = 5;
+constexpr int MAX_WORKERS = 45; //45
+constexpr int MAX_WORKERS_POST_SUDDEN_DEATH = 20; //20
+constexpr int MIN_NUTRIENTS_TO_MOVE_QUEEN = 30000;
+constexpr int MAX_SOLDIERS = 25; //25
+constexpr int MAX_SCOUTS = 25;
 constexpr int MAX_QUEENS = 3;
 constexpr int MIN_NUTRIENTS_TO_SPAWN_WORKER = 2000;
 constexpr int MIN_NUTRIENTS_TO_SPAWN_SOLDIER = 5000;

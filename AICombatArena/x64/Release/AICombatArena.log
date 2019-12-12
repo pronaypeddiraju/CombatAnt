@@ -1,10 +1,15 @@
 ﻿  AIPlayerController.cpp
-d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(1529): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(538): warning C4244: '=': conversion from 'float' to 'unsigned char', possible loss of data
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(539): warning C4244: '=': conversion from 'float' to 'unsigned char', possible loss of data
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(540): warning C4244: '=': conversion from 'float' to 'unsigned char', possible loss of data
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(541): warning C4244: '=': conversion from 'float' to 'unsigned char', possible loss of data
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(559): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+d:\school_git\combatant\aicombatarena\source\aiplayercontroller.cpp(1620): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
      Creating library D:\School_Git\CombatAnt\AICombatArena\x64\Release\C28_Pronay_Peddiraju.lib and object D:\School_Git\CombatAnt\AICombatArena\x64\Release\C28_Pronay_Peddiraju.exp
   Generating code
-  0 of 873 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+  2 of 941 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    10 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   AICombatArena.vcxproj -> D:\School_Git\CombatAnt\AICombatArena\x64\Release\C28_Pronay_Peddiraju.dll
   Copying C28_Pronay_Peddiraju.dll to Arena Players folder
