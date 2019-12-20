@@ -12,7 +12,7 @@ agentDefinitionFile="./Data/AgentDefinitions.xml"
 allowRemotePause=true
 allowRemoteDebug=true
 allowMoodText=true
-autoRestart=true
+autoRestart=false;
 
 enableDebugDraw=true
 showEmotes=true
